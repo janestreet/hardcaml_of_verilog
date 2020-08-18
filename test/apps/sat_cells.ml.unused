@@ -1,0 +1,136 @@
+#directory "_build/src";;
+#require "atdgen,hardcaml";;
+#load "Hardcaml_of_verilog.cma";;
+
+(*
+
+  This program generates miter circuits to prove equivalence of the
+  yosys cell models to the hardcaml versions using SAT.
+
+  This is done over various parameter combinations so cannot be
+  totally exhaustive, but with enough testing we can be fairly
+  confident.
+
+  A verilog file is generated for each test, and an example command
+  line for yosys is generated.
+
+*)
+
+module Test(C : Hardcaml_of_verilog.Techlib.Proof.Cells)(P : sig
+  val params : int C.P.t list
+end) = struct
+
+  module Proof = Hardcaml_of_verilog.Techlib.Proof.Make(C)
+
+  let pint = function Hardcaml.Signal.Types.ParamInt i -> i
+                    | _ -> failwith "expecting int parameter"
+
+  let postfix p =
+    List.fold_left
+      (fun a (n,p) -> a ^ "_" ^ n ^ "_" ^ string_of_int p)
+      "" C.P.(to_list @@ map2 (fun (n,_) p -> n,p) t p)
+
+  let run () =
+    List.iter
+      (fun cell ->
+        List.iter
+          (fun p ->
+            try Proof.proof ~path:"test/sat_techlib" ~postfix:(postfix p) p cell
+            with e -> begin
+              Printf.fprintf stderr "failed to generate %s%s\n%!" (fst cell) (postfix p);
+              raise e
+            end)
+          P.params)
+      C.cells
+
+end
+
+let n_random_params = 50
+let rnd l h = l + Random.int (h-l+1)
+
+module Op1 = Test(Hardcaml_of_verilog.Techlib.Simlib.Op1)(struct
+  open Hardcaml_of_verilog.Techlib.Simlib.Op1.P
+  let sgn p = [ { p with a_signed=0 }; { p with a_signed=1 } ]
+  let rnd _ = { a_signed = rnd 0 1; a_width = rnd 1 10; y_width = rnd 1 10 }
+  let params = List.concat [
+    sgn { a_signed = 0; a_width = 1; y_width = 1; };
+    sgn { a_signed = 0; a_width = 3; y_width = 6; };
+    sgn { a_signed = 0; a_width = 6; y_width = 3; };
+    List.concat @@ List.map sgn @@ Array.to_list @@ Array.init n_random_params rnd;
+  ]
+end)
+
+module Op2 = Test(Hardcaml_of_verilog.Techlib.Simlib.Op2)(struct
+  open Hardcaml_of_verilog.Techlib.Simlib.Op2.P
+  let sgn p = [
+    { p with a_signed=0; b_signed=0 };
+    { p with a_signed=0; b_signed=1 };
+    { p with a_signed=1; b_signed=0 };
+    { p with a_signed=1; b_signed=1 };
+  ]
+  let rnd _ = { a_signed = rnd 0 1; b_signed = rnd 0 1;
+                a_width = rnd 1 10; b_width = rnd 1 10;
+                y_width = rnd 1 10 }
+  let params = List.concat [
+    sgn { a_signed = 0; b_signed = 0; a_width = 1; b_width = 1; y_width = 1; };
+    sgn { a_signed = 0; b_signed = 0; a_width = 3; b_width = 4; y_width = 6; };
+    sgn { a_signed = 0; b_signed = 0; a_width = 3; b_width = 6; y_width = 4; };
+    sgn { a_signed = 0; b_signed = 0; a_width = 4; b_width = 3; y_width = 6; };
+    sgn { a_signed = 0; b_signed = 0; a_width = 4; b_width = 6; y_width = 3; };
+    sgn { a_signed = 0; b_signed = 0; a_width = 6; b_width = 3; y_width = 4; };
+    sgn { a_signed = 0; b_signed = 0; a_width = 6; b_width = 4; y_width = 3; };
+    List.concat @@ List.map sgn @@ Array.to_list @@ Array.init n_random_params rnd;
+  ]
+end)
+
+module Fa = Test(Hardcaml_of_verilog.Techlib.Simlib.Fa)(struct
+  open Hardcaml_of_verilog.Techlib.Simlib.Fa.P
+  let params = Array.to_list @@ Array.init 9 (fun width -> { width=width+1 })
+end)
+
+(* XXX not working *)
+module Lcu = Test(Hardcaml_of_verilog.Techlib.Simlib.Lcu)(struct
+  open Hardcaml_of_verilog.Techlib.Simlib.Lcu.P
+  let params = Array.to_list @@ Array.init 9 (fun width -> { width=width+1 })
+end)
+
+module Slice = Test(Hardcaml_of_verilog.Techlib.Simlib.Slice)(struct
+  open Hardcaml_of_verilog.Techlib.Simlib.Slice.P
+  let rnd _ = { offset = rnd 0 10; a_width = rnd 1 10; y_width = rnd 1 10 }
+  let params = Array.to_list @@ Array.init n_random_params rnd;
+end)
+
+module Concat = Test(Hardcaml_of_verilog.Techlib.Simlib.Concat)(struct
+  open Hardcaml_of_verilog.Techlib.Simlib.Concat.P
+  let rnd _ = { a_width = rnd 1 10; b_width = rnd 1 10 }
+  let params = Array.to_list @@ Array.init n_random_params rnd;
+end)
+
+module Mux = Test(Hardcaml_of_verilog.Techlib.Simlib.Mux)(struct
+  open Hardcaml_of_verilog.Techlib.Simlib.Mux.P
+  let params = Array.to_list @@ Array.init 9 (fun width -> { width=width+1 })
+end)
+
+module Pmux = Test(Hardcaml_of_verilog.Techlib.Simlib.Pmux)(struct
+  open Hardcaml_of_verilog.Techlib.Simlib.Pmux.P
+  let rnd _ = { width = rnd 1 10; s_width = rnd 1 10 }
+  let params = Array.to_list @@ Array.init n_random_params rnd;
+end)
+
+module Lut = Test(Hardcaml_of_verilog.Techlib.Simlib.Lut)(struct
+  open Hardcaml_of_verilog.Techlib.Simlib.Lut.P
+  let rnd _ =
+    let width = rnd 1 4 in
+    { width; lut = rnd 0 ((1 lsl width)-1) }
+  let params = Array.to_list @@ Array.init n_random_params rnd;
+end)
+
+let () = Op1.run ()
+let () = Op2.run ()
+let () = Fa.run ()
+let () = Lcu.run ()
+let () = Slice.run ()
+let () = Concat.run ()
+let () = Mux.run ()
+let () = Pmux.run ()
+let () = Lut.run ()

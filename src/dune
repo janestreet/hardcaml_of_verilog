@@ -1,0 +1,20 @@
+(rule (targets yosys_atd_t.mli yosys_atd_t.ml)
+ (deps (:first_dep yosys_atd.atd))
+ (action (run %{bin:atdgen} -t -o yosys_atd %{first_dep})))
+
+(rule (targets yosys_atd_j.mli yosys_atd_j.ml)
+ (deps (:first_dep yosys_atd.atd))
+ (action (run %{bin:atdgen} -j -j-std -o yosys_atd %{first_dep})))
+
+(library (name hardcaml_of_verilog) (public_name hardcaml_of_verilog)
+ (libraries atdgen core hardcaml yojson)
+ (preprocess
+  (pps ppx_deriving_hardcaml ppx_jane -dont-check-doc-comments-attachment)))
+
+(rule (targets config.ml) (deps)
+ (action
+  (bash
+    "cat <<EOF > config.ml\
+   \nlet yosys = \"yosys\"\
+   \nlet env = \"\"\
+   \nEOF")))
