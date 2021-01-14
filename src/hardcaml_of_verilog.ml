@@ -1,3 +1,4 @@
+module Circuit_to_json = Circuit_to_json
 module Interface = Interface
 module Json_netlist = Json_netlist
 module Lvt = Lvt
