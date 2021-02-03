@@ -8,8 +8,7 @@
 
 (library (name hardcaml_of_verilog) (public_name hardcaml_of_verilog)
  (libraries atdgen core hardcaml yojson)
- (preprocess
-  (pps ppx_deriving_hardcaml ppx_jane -dont-check-doc-comments-attachment)))
+ (preprocess (pps ppx_deriving_hardcaml ppx_jane)))
 
 (rule (targets config.ml) (deps)
  (action

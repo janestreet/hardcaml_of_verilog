@@ -251,7 +251,7 @@ module Simlib = struct
 
     let shiftx =
       ( "$shiftx"
-        , (* XXX not tested! *)
+        ,
         fun _ p i ->
           let p = P.map ~f:pint p in
           assert (width i.I.a = p.P.a_width);

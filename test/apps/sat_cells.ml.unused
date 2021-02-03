@@ -88,7 +88,6 @@ module Fa = Test(Hardcaml_of_verilog.Techlib.Simlib.Fa)(struct
   let params = Array.to_list @@ Array.init 9 (fun width -> { width=width+1 })
 end)
 
-(* XXX not working *)
 module Lcu = Test(Hardcaml_of_verilog.Techlib.Simlib.Lcu)(struct
   open Hardcaml_of_verilog.Techlib.Simlib.Lcu.P
   let params = Array.to_list @@ Array.init 9 (fun width -> { width=width+1 })

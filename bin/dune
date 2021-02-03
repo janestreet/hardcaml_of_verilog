@@ -1,3 +1,2 @@
 (executables (names convert) (public_names hardcaml_of_verilog)
- (libraries core hardcaml_of_verilog)
- (preprocess (pps ppx_jane -allow-unannotated-ignores)))
+ (libraries core hardcaml_of_verilog) (preprocess (pps ppx_jane)))

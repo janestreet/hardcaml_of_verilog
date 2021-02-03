@@ -2,8 +2,8 @@
  (preprocess (pps ppx_deriving_hardcaml ppx_jane)))
 
 (rule (targets picorv32.ml)
- (deps picorv32.v %{workspace_root}/lib/hardcaml_of_verilog/bin/convert.exe
+ (deps picorv32.v %{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe
   picorv32.sexp)
  (action
   (bash
-   "%{workspace_root}/lib/hardcaml_of_verilog/bin/convert.exe verilog-design ocaml-module -design picorv32.sexp > picorv32.ml")))
+   "%{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe verilog-design ocaml-module -design picorv32.sexp > picorv32.ml")))

@@ -3,39 +3,39 @@
 
 (rule (targets simple_adder_8.ml)
  (deps simple_adder.v
-  %{workspace_root}/lib/hardcaml_of_verilog/bin/convert.exe
+  %{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe
   simple_adder_8.sexp)
  (action
   (bash
-   "%{workspace_root}/lib/hardcaml_of_verilog/bin/convert.exe verilog-design ocaml-module -design simple_adder_8.sexp > simple_adder_8.ml")))
+   "%{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe verilog-design ocaml-module -design simple_adder_8.sexp > simple_adder_8.ml")))
 
 (rule (targets simple_adder_16.ml)
  (deps simple_adder.v
-  %{workspace_root}/lib/hardcaml_of_verilog/bin/convert.exe
+  %{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe
   simple_adder_16.sexp)
  (action
   (bash
-   "%{workspace_root}/lib/hardcaml_of_verilog/bin/convert.exe verilog-design ocaml-module -design simple_adder_16.sexp > simple_adder_16.ml")))
+   "%{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe verilog-design ocaml-module -design simple_adder_16.sexp > simple_adder_16.ml")))
 
 (rule (targets simple_adder.ml)
  (deps simple_adder.v
-  %{workspace_root}/lib/hardcaml_of_verilog/bin/convert.exe
+  %{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe
   simple_adder.sexp)
  (action
   (bash
-   "%{workspace_root}/lib/hardcaml_of_verilog/bin/convert.exe verilog-design ocaml-module -design simple_adder.sexp > simple_adder.ml")))
+   "%{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe verilog-design ocaml-module -design simple_adder.sexp > simple_adder.ml")))
 
 (rule (targets carry_save_adder.ml)
  (deps simple_adder.v full_adder.v
-  %{workspace_root}/lib/hardcaml_of_verilog/bin/convert.exe
+  %{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe
   carry_save_adder.sexp carry_save_adder.json)
  (action
   (bash
-   "%{workspace_root}/lib/hardcaml_of_verilog/bin/convert.exe verilog-design ocaml-module -design carry_save_adder.sexp > carry_save_adder.ml")))
+   "%{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe verilog-design ocaml-module -design carry_save_adder.sexp > carry_save_adder.ml")))
 
 (rule (targets carry_save_adder.json)
  (deps carry_save_adder.sexp simple_adder.v full_adder.v
-  %{workspace_root}/lib/hardcaml_of_verilog/bin/convert.exe)
+  %{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe)
  (action
   (bash
-   "%{workspace_root}/lib/hardcaml_of_verilog/bin/convert.exe verilog-design json -design carry_save_adder.sexp -json carry_save_adder.json")))
+   "%{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe verilog-design json -design carry_save_adder.sexp -json carry_save_adder.json")))
