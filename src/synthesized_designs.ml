@@ -194,12 +194,12 @@ module Conversion = struct
       match List.Assoc.find techlib cell.Y.typ ~equal:String.equal with
       | Some cell -> cell
       | None ->
-        ((* could be a blackbox cell from the techlib *)
-          match Map.find bbmap cell.Y.typ with
-          | Some n -> black_box_of_cell inst_name { cell with Y.typ = n }
-          (* otherwise pure blackbox, if allowed *)
-          | None when blackbox -> black_box_of_cell inst_name cell
-          | None -> raise Y.(Cell_not_in_techlib (cell.typ, cell.attributes.src)))
+        (* could be a blackbox cell from the techlib *)
+        (match Map.find bbmap cell.Y.typ with
+         | Some n -> black_box_of_cell inst_name { cell with Y.typ = n }
+         (* otherwise pure blackbox, if allowed *)
+         | None when blackbox -> black_box_of_cell inst_name cell
+         | None -> raise Y.(Cell_not_in_techlib (cell.typ, cell.attributes.src)))
     in
     (* get cell with explicit inputs and outputs and map to techlib *)
     let create_cell (inst_name, cell) =
