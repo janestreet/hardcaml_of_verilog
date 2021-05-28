@@ -1,2 +1,3 @@
 (executables (names convert) (public_names hardcaml_of_verilog)
- (libraries core hardcaml_of_verilog) (preprocess (pps ppx_jane)))
+ (libraries core.command_unix core hardcaml_of_verilog)
+ (preprocess (pps ppx_jane)))

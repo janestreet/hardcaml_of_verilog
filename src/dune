@@ -7,7 +7,7 @@
  (action (run %{bin:atdgen} -j -j-std -o yosys_atd %{first_dep})))
 
 (library (name hardcaml_of_verilog) (public_name hardcaml_of_verilog)
- (libraries atdgen core hardcaml yojson)
+ (libraries atdgen core core.core_unix hardcaml yojson)
  (preprocess (pps ppx_deriving_hardcaml ppx_jane)))
 
 (rule (targets config.ml) (deps)

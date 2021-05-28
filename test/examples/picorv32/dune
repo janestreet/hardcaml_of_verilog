@@ -1,4 +1,4 @@
-(executables (names test) (libraries hardcaml_of_verilog)
+(executables (names test) (libraries hardcaml_of_verilog parsexp)
  (preprocess (pps ppx_deriving_hardcaml ppx_jane)))
 
 (rule (targets picorv32.ml)

@@ -175,5 +175,5 @@ let () =
           ~summary:"Conversion of a [Verilog_design.t] to JSON and OCaml."
           [ "json", verilog_design_json_command; "ocaml-module", ocaml_module_command ] )
     ]
-  |> Command.run
+  |> Command_unix.run
 ;;
