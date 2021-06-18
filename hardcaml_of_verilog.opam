@@ -12,6 +12,7 @@ build: [
 depends: [
   "ocaml" {>= "4.08.0"}
   "core"
+  "core_kernel"
   "hardcaml"
   "ppx_deriving_hardcaml"
   "ppx_jane"
