@@ -1,179 +1,195 @@
-(* convert verilog to/from json using yosys. *)
-
 open Core
-open Hardcaml
 open Hardcaml_of_verilog
 
-let load_json_and_save_rtl ~black_box ~keep_names ~vhdl ~core_name ~json_file =
-  let fns =
-    match json_file with
-    | Some json_file ->
-      Synthesized_designs.of_json_netlist_exn
-        ~allow_blackboxes:black_box
-        ~use_netlist_names:keep_names
-        ~techlib:Techlib.Simlib.cells
-        (Json_netlist.from_file json_file)
-    | None ->
-      Synthesized_designs.of_json_netlist_exn
-        ~allow_blackboxes:black_box
-        ~use_netlist_names:keep_names
-        ~techlib:Techlib.Simlib.cells
-        (Json_netlist.from_channel In_channel.stdin)
-  in
-  let design =
-    match core_name with
-    | Some core_name -> Map.find_exn fns core_name
-    | None -> snd (Map.min_elt_exn fns)
-  in
-  let inputs =
-    List.map (Synthesized_design.inputs design) ~f:(fun (n, b) -> n, Signal.input n b)
-  in
-  let outputs = Synthesized_design.create_fn design inputs in
-  let circ =
-    Circuit.create_exn
-      ~name:(Synthesized_design.name design)
-      (List.map outputs ~f:(fun (n, s) -> Signal.output n s))
-  in
-  if vhdl then Rtl.print Vhdl circ else Rtl.print Verilog circ
+let in_chan =
+  Command.Arg_type.create (fun n -> In_channel.create n)
+  |> Command.Flag.optional_with_default In_channel.stdin
 ;;
 
-let to_rtl_command =
-  let open Command.Let_syntax in
+let out_chan =
+  Command.Arg_type.create Out_channel.create
+  |> Command.Flag.optional_with_default Out_channel.stdout
+;;
+
+let rtl =
+  Command.Arg_type.create (fun rtl ->
+    match String.lowercase rtl with
+    | "verilog" | "vlog" -> Hardcaml.Rtl.Language.Verilog
+    | "vhdl" -> Hardcaml.Rtl.Language.Vhdl
+    | rtl -> raise_s [%message "Invalid RTL specification" (rtl : string)])
+  |> Command.Flag.optional_with_default Hardcaml.Rtl.Language.Verilog
+;;
+
+let parsexp s =
+  match Parsexp.Single.parse_string s with
+  | Ok s -> Ok s
+  | Error e ->
+    Or_error.error_s [%message "Failed to parse sexp" (e : Parsexp.Parse_error.t)]
+;;
+
+let yosys_netlist_of_json ~file_in =
+  let%bind.Or_error json = Or_error.try_with (fun () -> In_channel.input_all file_in) in
+  Expert.Yosys_netlist.of_string json
+;;
+
+let write_sexp ~file_out sexp_of_t t =
+  let sexp = Sexp.to_string_hum (sexp_of_t t) in
+  Out_channel.output_string file_out sexp
+;;
+
+let netlist_of_json ~file_in =
+  let%bind.Or_error netlist = yosys_netlist_of_json ~file_in in
+  Netlist.of_yosys_netlist netlist |> Or_error.ok_exn |> Netlist.get_all_modules
+;;
+
+let command_json_to_yosys_netlist =
   Command.basic
-    ~summary:"Convert a single design in a JSON file to VHDL or Verilog"
-    [%map_open
-      let json_file =
-        flag "-json" (optional string) ~doc:"JSON Input JSON file.  Use stdin by default"
-      and vhdl = flag "-vhdl" no_arg ~doc:" Convert to VHDL.  Default is Verilog"
-      and core_name = flag "-design" (optional string) ~doc:"NAME Design to extract"
-      and black_box = flag "-black-box" no_arg ~doc:"Allow black boxes in the netlist"
-      and keep_names =
-        flag "-keep-names" no_arg ~doc:"Try to keep names specified in the netlist"
-      in
-      fun () -> load_json_and_save_rtl ~black_box ~keep_names ~vhdl ~core_name ~json_file]
-;;
-
-let output_string_opt file ~data =
-  match file with
-  | Some file -> Out_channel.write_all file ~data
-  | None -> Out_channel.print_string data
-;;
-
-let convert_verilog_to_json ~blackboxes ~verilog ~json_file ~topname =
-  let json =
-    ok_exn (Synthesize.convert_to_json_string ~params:[] ~blackboxes ~verilog ~topname)
-  in
-  output_string_opt json_file ~data:json
-;;
-
-let to_json_command =
-  let open Command.Let_syntax in
-  Command.basic
-    ~summary:"Convert a design in a (single) Verilog file to json."
-    [%map_open
-      let json_file =
-        flag
-          "-json"
-          (optional string)
-          ~doc:"JSON Output JSON file.  Use stdout by default"
-      and verilog_file = flag "-verilog" (required string) ~doc:"FILE Input verilog file"
-      and topname = flag "-top" (required string) ~doc:"TOP Top level design name" in
+    ~summary:"Read a YOSYS JSON netlist and write as Yosys_netlist.t sexp"
+    [%map_open.Command
+      let file_in = flag "-i" in_chan ~doc:"JSON input file"
+      and file_out = flag "-o" out_chan ~doc:"NETLIST output file" in
       fun () ->
-        convert_verilog_to_json
-          ~blackboxes:[]
-          ~verilog:[ verilog_file ]
-          ~json_file
-          ~topname]
+        let yosys_netlist = yosys_netlist_of_json ~file_in in
+        write_sexp ~file_out [%sexp_of: Expert.Yosys_netlist.t Or_error.t] yosys_netlist]
 ;;
 
-let load_sexp s =
-  try Sexp.load_sexp s with
-  | _ -> Sexp.of_string s
-;;
-
-let verilog_design_json_command =
-  let open Command.Let_syntax in
+let command_json_to_netlist =
   Command.basic
-    ~summary:"Convert a [Verilog_design.t] to JSON."
-    [%map_open
-      let verilog_design =
-        flag
-          "-design"
-          (required string)
-          ~doc:"SEXP Sexp (or file containing a sexp) of a [Verilog_design.t]"
-      and json_file =
-        flag
-          "-json-file"
-          (optional string)
-          ~doc:"JSON Ouput JSON file.  stdout by default"
-      and path =
-        flag "-path" (optional string) ~doc:"PATH Prefix of path to verilog files"
-      and blackbox = flag "-blackbox" no_arg ~doc:"Allow blackboxes." in
+    ~summary:"Read a YOSYS JSON netlist and write as Netlist.t sexp"
+    [%map_open.Command
+      let file_in = flag "-i" in_chan ~doc:"JSON input file"
+      and file_out = flag "-o" out_chan ~doc:"NETLIST output file" in
       fun () ->
-        let verilog_design = Verilog_design.t_of_sexp (load_sexp verilog_design) in
-        let json =
-          Verilog_design.to_json
-            ?file_io:
-              (Option.map path ~f:(fun path -> Verilog_design.File_io.At_file_path path))
-            ~blackbox
-            verilog_design
+        let yosys_netlist = netlist_of_json ~file_in in
+        write_sexp ~file_out [%sexp_of: Netlist.Module.t list Or_error.t] yosys_netlist]
+;;
+
+let read_verilog_design ~file_in =
+  let%bind.Or_error verilog_design = parsexp (In_channel.input_all file_in) in
+  Or_error.try_with (fun () -> Verilog_design.t_of_sexp verilog_design)
+;;
+
+let synthesize_to_yosys_netlist ~file_in =
+  let%bind.Or_error verilog_design = read_verilog_design ~file_in in
+  let%bind.Or_error netlist = Expert.Synthesize.to_yosys_netlist verilog_design in
+  Ok netlist
+;;
+
+let synthesize_to_netlist ~file_in =
+  let%bind.Or_error verilog_design = read_verilog_design ~file_in in
+  let%bind.Or_error netlist = Netlist.create verilog_design in
+  Netlist.get_all_modules netlist
+;;
+
+let synthesize_to_circuit ~file_in =
+  let%bind.Or_error verilog_design = read_verilog_design ~file_in in
+  let%bind.Or_error netlist = Netlist.create verilog_design in
+  let%bind.Or_error circuit =
+    Verilog_circuit.create netlist ~top_name:(Verilog_design.top_name verilog_design)
+  in
+  let%bind.Or_error circuit = Verilog_circuit.to_hardcaml_circuit circuit in
+  Ok circuit
+;;
+
+let write_rtl ~file_out ~rtl (circuit : Hardcaml.Circuit.t) =
+  Hardcaml.Rtl.output ~output_mode:(To_channel file_out) rtl circuit
+;;
+
+let command_synthesize_to_yosys_netlist =
+  Command.basic
+    ~summary:"Read a verilog design netlist and write as Yosys_netlist.t sexp"
+    [%map_open.Command
+      let file_in = flag "-i" in_chan ~doc:"VLOG_DESIGN input file"
+      and file_out = flag "-o" out_chan ~doc:"NETLIST output file" in
+      fun () ->
+        let netlist = synthesize_to_yosys_netlist ~file_in in
+        write_sexp ~file_out [%sexp_of: Expert.Yosys_netlist.t Or_error.t] netlist]
+;;
+
+let command_synthesize_to_netlist =
+  Command.basic
+    ~summary:"Read a verilog design and write as Netlist.t sexp"
+    [%map_open.Command
+      let file_in = flag "-i" in_chan ~doc:"VLOG_DESIGN input file"
+      and file_out = flag "-o" out_chan ~doc:"NETLIST output file" in
+      fun () ->
+        let netlist = synthesize_to_netlist ~file_in in
+        write_sexp ~file_out [%sexp_of: Netlist.Module.t list Or_error.t] netlist]
+;;
+
+let command_synthesize_to_verilog =
+  Command.basic
+    ~summary:"Read a verilog design and write as RTL file"
+    [%map_open.Command
+      let file_in = flag "-i" in_chan ~doc:"VLOG_DESIGN input file"
+      and file_out = flag "-o" out_chan ~doc:"RTL output file"
+      and rtl = flag "-rtl" rtl ~doc:"RTL write verilog (default) or vhdl" in
+      fun () ->
+        let circuit = synthesize_to_circuit ~file_in |> Or_error.ok_exn in
+        write_rtl ~file_out ~rtl circuit]
+;;
+
+let command_synthesize_to_json =
+  Command.basic
+    ~summary:"Read a verilog design and convert to json"
+    [%map_open.Command
+      let file_in = flag "-i" in_chan ~doc:"VLOG_DESIGN input file"
+      and json_file = flag "-o" (required string) ~doc:"JSON output file" in
+      fun () ->
+        let result =
+          let%bind.Or_error verilog_design = read_verilog_design ~file_in in
+          Expert.Synthesize.to_json_file ~verbose:true verilog_design ~json_file
         in
-        output_string_opt json_file ~data:json]
+        Or_error.ok_exn result]
 ;;
 
-let ocaml_module_command =
-  let open Command.Let_syntax in
+let command_synthesize_to_ocaml_module =
   Command.basic
-    ~summary:"Convert a [Verilog_design.t] to an OCaml module."
-    [%map_open
-      let verilog_design =
-        flag
-          "-design"
-          (required string)
-          ~doc:"SEXP Sexp (or file containing a sexp) of a [Verilog_design.t]"
-      and json_file =
-        flag
-          "-json-file"
-          (optional string)
-          ~doc:
-            "JSON JSON netlist.  If unspecified the Verilog design is synthesized with \
-             yosys."
-      and ocaml_module =
-        flag
-          "-ocaml-module"
-          (optional string)
-          ~doc:"OCAML OCaml output file.  stdout by default"
-      and path =
-        flag "-path" (optional string) ~doc:"PATH Prefix of path to verilog files"
-      in
+    ~summary:"Read a verilog design and convert to an OCaml module"
+    [%map_open.Command
+      let file_in = flag "-i" in_chan ~doc:"VLOG_DESIGN input file"
+      and file_out = flag "-o" out_chan ~doc:"OCAML output file"
+      and path = flag "-path" (optional string) ~doc:"PREFIX of path to verilog files" in
       fun () ->
-        let verilog_design = Verilog_design.t_of_sexp (load_sexp verilog_design) in
-        let synthesized_design =
-          match json_file with
-          | None ->
-            Verilog_design.load
-              ?file_io:
-                (Option.map path ~f:(fun path -> Verilog_design.File_io.At_file_path path))
-              ~blackbox:true
-              verilog_design
-          | Some json_file ->
-            Verilog_design.of_json ~topname:verilog_design.name json_file |> snd
+        let ocaml =
+          let%bind.Or_error verilog_design = read_verilog_design ~file_in in
+          let verilog_design =
+            match path with
+            | None -> verilog_design
+            | Some path ->
+              Verilog_design.map_paths verilog_design ~f:(fun vlog_path ->
+                Filename.concat path vlog_path)
+          in
+          let%bind.Or_error netlist = Netlist.create ~verbose:true verilog_design in
+          let%bind.Or_error circuit =
+            Verilog_circuit.create
+              netlist
+              ~top_name:(Verilog_design.top_name verilog_design)
+          in
+          let ocaml = Ocaml_module.to_ocaml verilog_design circuit in
+          Ok ocaml
         in
-        let ocaml = Ocaml_module.to_ocaml verilog_design synthesized_design in
-        output_string_opt ocaml_module ~data:ocaml]
+        Out_channel.output_string file_out (Or_error.ok_exn ocaml)]
 ;;
 
 let () =
-  Command.group
-    ~summary:""
-    [ ( "simple"
-      , Command.group
-          ~summary:"Onshot conversion of a single verilog file with yosys"
-          [ "json", to_json_command; "rtl", to_rtl_command ] )
-    ; ( "verilog-design"
-      , Command.group
-          ~summary:"Conversion of a [Verilog_design.t] to JSON and OCaml."
-          [ "json", verilog_design_json_command; "ocaml-module", ocaml_module_command ] )
-    ]
-  |> Command_unix.run
+  Command_unix.run
+    (Command.group
+       ~summary:"Convert YOSYS JSON netlists"
+       [ ( "json"
+         , Command.group
+             ~summary:""
+             [ "yosys-netlist", command_json_to_yosys_netlist
+             ; "netlist", command_json_to_netlist
+             ] )
+       ; ( "synthesize"
+         , Command.group
+             ~summary:"Convert verilog designs"
+             [ "yosys-netlist", command_synthesize_to_yosys_netlist
+             ; "netlist", command_synthesize_to_netlist
+             ; "verilog", command_synthesize_to_verilog
+             ; "ocaml-module", command_synthesize_to_ocaml_module
+             ; "json", command_synthesize_to_json
+             ] )
+       ])
 ;;

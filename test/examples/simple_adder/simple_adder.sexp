@@ -1,4 +1,5 @@
-((name simple_adder)
- (path "simple_adder.v")
- (instantiates ())
- (params ((N (Int 16)))))
+((
+  top (
+    (module_name simple_adder)
+    (path        simple_adder.v)
+    (parameters ((N (Int 16)))))))

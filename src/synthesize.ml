@@ -1,72 +1,114 @@
-open! Import
-module List = Base.List
+open Base
+open Stdio
+module V = Verilog_design
+module M = V.Module
 
-let tempfile ext = Filename.temp_file "hardcaml_of_verilog_synthesize_" ext
-
-let unlink ok file =
-  (* make true to keep temporary files for debugging *)
-  let debug = false in
-  if ok || not debug then Unix.unlink file
+let default_passes =
+  Pass.
+    [ Proc
+    ; Flatten
+    ; Memory { nomap = true }
+    ; Opt { mux_undef = false }
+    ; Clean
+    ; Opt { mux_undef = true }
+    ; Clean
+    ]
 ;;
 
-let convert_to_json_file
-      ~(params : Parameter.t list)
-      ~topname
-      ~blackboxes
-      ~verilog
-      ~json_file
-  =
-  let script_file = tempfile ".yosys" in
-  let script = Out_channel.create script_file in
-  (* verilog files loaded in order to extract their interfaces for use as blackboxes *)
-  List.iter blackboxes ~f:(fprintf script "read_verilog -defer -lib %s\n");
-  (* verilog files containing designs which will be synthesized into json *)
-  List.iter verilog ~f:(fprintf script "read_verilog -defer %s\n");
-  (* set top level parameters.
-     workaround applied for yosys 0.6 https://github.com/cliffordwolf/yosys/issues/132 *)
-  List.iter params ~f:(fun p ->
-    fprintf
-      script
-      "chparam -set %s %s $abstract\\%s\n"
-      (p.name |> Parameter_name.to_string)
-      (match p.value with
-       | Int i -> sprintf "%i" i
-       | String s -> "\"" ^ s ^ "\""
-       | _ -> raise_s [%message "Unsupported parameter type" (p : Parameter.t)])
-      topname);
-  (* standard synthesis passes - set top level design *)
-  fprintf script "hierarchy -top %s\n" topname;
-  (* convert always blocks into muxes *)
-  fprintf script "proc\n";
-  fprintf script "flatten\n";
-  (* convert memories *)
-  fprintf script "memory -nomap; opt; clean\n";
-  (* clean up *)
-  fprintf script "opt -mux_undef\n";
-  fprintf script "clean\n";
-  (* write to json *)
-  fprintf script "write_json %s\n" json_file;
-  Out_channel.close script;
-  (* run yosys *)
-  let stat = Unix.system @@ Run.with_script ~verbose:false () ~script_file in
-  unlink (Result.is_ok stat) script_file;
-  Unix.Exit_or_signal.or_error stat
+let get_parameters top =
+  match M.parameters top with
+  | [] -> None
+  | params ->
+    List.map params ~f:(fun p ->
+      let name = Verilog_design.Parameter.name p in
+      let value = Verilog_design.Parameter.string_of_value p in
+      [%string {|-set %{name} %{value}|}])
+    |> String.concat ~sep:" "
+    |> Option.some
 ;;
 
-let convert_to_json_string ~params ~topname ~blackboxes ~verilog =
-  let json_file = tempfile ".json" in
-  let result =
-    Or_error.try_with (fun () ->
-      Or_error.ok_exn
-        (convert_to_json_file ~params ~topname ~blackboxes ~verilog ~json_file);
-      In_channel.read_all json_file)
+let get_defines top =
+  V.defines top
+  |> List.map ~f:(fun d ->
+    let value = V.Define.value d in
+    if V.Define_value.equal No_arg value
+    then [%string {|-D%{V.Define.name d}|}]
+    else [%string {|-D%{V.Define.name d}=%{V.Define_value.to_string value}|}])
+  |> String.concat ~sep:" "
+;;
+
+let get_unique_files top predicate =
+  let rec unique seen modules =
+    match modules with
+    | [] -> []
+    | hd :: tl ->
+      if Set.mem seen (M.path hd)
+      then unique seen tl
+      else hd :: unique (Set.add seen (M.path hd)) tl
   in
-  unlink (Result.is_ok result) json_file;
-  result
+  M.flat_map top ~f:(fun m -> if predicate m then Some m else None)
+  |> List.filter_opt
+  |> unique (Set.empty (module String))
+  |> List.rev
 ;;
 
-let convert_to_json_netlist ~params ~topname ~blackboxes ~verilog =
-  Or_error.map
-    (convert_to_json_string ~params ~topname ~blackboxes ~verilog)
-    ~f:Json_netlist.of_string
+let yosys_script ?(passes = default_passes) verilog_design ~json_file =
+  let buffer = Buffer.create 1024 in
+  let add line = Buffer.add_string buffer (line ^ "\n") in
+  let top = V.top verilog_design in
+  let params = get_parameters top in
+  let defines = get_defines verilog_design in
+  List.iter (get_unique_files top M.blackbox) ~f:(fun m ->
+    add [%string {|read_verilog %{defines} -defer -lib %{M.path m}|}]);
+  List.iter
+    (get_unique_files top (Fn.non M.blackbox))
+    ~f:(fun m -> add [%string {|read_verilog %{defines} -defer %{M.path m}|}]);
+  (* It seems you must set all parameters at once, or otherwise it sets some, but not
+     others, in non-untuitive ways. *)
+  Option.iter params ~f:(fun params ->
+    add [%string "chparam %{params} %{M.module_name top}"]);
+  add [%string {|hierarchy -top %{M.module_name top}|}];
+  List.iter passes ~f:(fun pass -> add (Pass.to_string pass));
+  add [%string {|write_json %{json_file}|}];
+  Buffer.contents buffer
+;;
+
+let tmp_file ~unlink ext =
+  let name = Filename_unix.temp_file "hardcaml_of_verilog_synthesize_" ext in
+  if unlink then Caml.at_exit (fun () -> Unix.unlink name);
+  name
+;;
+
+let tmp_out_channel ~unlink ext =
+  let name = tmp_file ~unlink ext in
+  name, Out_channel.create name
+;;
+
+let write_tmp_yosys_script ?passes verilog_design ~json_file =
+  let script_name, script = tmp_out_channel ~unlink:true ".yosys" in
+  Out_channel.output_string script (yosys_script ?passes verilog_design ~json_file);
+  Out_channel.close script;
+  script_name
+;;
+
+let run_yosys ?(verbose = false) args =
+  let verbose = if verbose then [] else [ "2>/dev/null"; ">/dev/null" ] in
+  let command =
+    String.concat ~sep:" " (List.concat [ [ Config.env; Config.yosys ]; args; verbose ])
+  in
+  match Unix.system command with
+  | WEXITED 0 -> Ok ()
+  | _ -> Or_error.error_s [%message "YOSYS failed."]
+;;
+
+let to_json_file ?verbose ?passes verilog_design ~json_file =
+  let script_name = write_tmp_yosys_script ?passes verilog_design ~json_file in
+  run_yosys ?verbose [ "-s"; script_name ]
+;;
+
+let to_yosys_netlist ?verbose ?passes verilog_design =
+  let json_file = tmp_file ~unlink:true ".json" in
+  let%bind.Or_error () = to_json_file ?verbose ?passes verilog_design ~json_file in
+  let%bind.Or_error json = Or_error.try_with (fun () -> In_channel.read_all json_file) in
+  Yosys_netlist.of_string json
 ;;

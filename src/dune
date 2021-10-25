@@ -1,14 +1,6 @@
-(rule (targets yosys_atd_t.mli yosys_atd_t.ml)
- (deps (:first_dep yosys_atd.atd))
- (action (run %{bin:atdgen} -t -o yosys_atd %{first_dep})))
-
-(rule (targets yosys_atd_j.mli yosys_atd_j.ml)
- (deps (:first_dep yosys_atd.atd))
- (action (run %{bin:atdgen} -j -j-std -o yosys_atd %{first_dep})))
-
-(library (name hardcaml_of_verilog) (public_name hardcaml_of_verilog)
- (libraries atdgen core_kernel.core core.core_unix hardcaml yojson)
- (preprocess (pps ppx_deriving_hardcaml ppx_jane)))
+(library (name hardcaml_of_verilog)
+ (libraries base hardcaml core.filename_unix jsonaf stdio unix)
+ (preprocess (pps ppx_jane ppx_jsonaf_conv ppx_deriving_hardcaml)))
 
 (rule (targets config.ml) (deps)
  (action

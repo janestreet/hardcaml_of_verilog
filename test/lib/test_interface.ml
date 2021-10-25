@@ -1,5 +1,6 @@
-open! Import
-open! Interface
+open! Core
+open Hardcaml_of_verilog
+open Expect_test_helpers_core
 
 module I = struct
   type 'a t = { a : 'a } [@@deriving sexp_of, hardcaml]
@@ -9,19 +10,22 @@ module O = struct
   type 'a t = { b : 'a } [@@deriving sexp_of, hardcaml]
 end
 
-module Conv = Make (I) (O)
+module Conv = With_interface.Make (I) (O)
 
 let verilog = {| module testme (input [2:0] a, output b); assign b = !a; endmodule |}
 
 let%expect_test "load simple design" =
-  let tmp = Filename.temp_file "hardcaml_of_verilog_interface_" "test" in
+  let tmp = Filename_unix.temp_file "hardcaml_of_verilog_interface_" ".v" in
   Out_channel.write_all tmp ~data:verilog;
   let f =
-    unstage (Conv.convert_exn () ~blackboxes:[] ~verilog:[ tmp ] ~topname:"testme")
+    Conv.create
+      Verilog_design.(create ~top:(Module.create ~module_name:"testme" ~path:tmp ()) ())
   in
-  Unix.unlink tmp;
+  Core_unix.unlink tmp;
   require_does_not_raise [%here] (fun () ->
-    print_s [%sexp (f { a = Hardcaml.Signal.wire 3 } : _ O.t)]);
+    let f = Or_error.ok_exn f in
+    let o = f { a = Hardcaml.Signal.wire 3 } |> Or_error.ok_exn in
+    print_s [%message (o : _ O.t)]);
   [%expect {|
-    ((b _)) |}]
+    (o ((b _))) |}]
 ;;

@@ -1,162 +1,198 @@
 open Base
-open Stdio
-module Parameter = Hardcaml.Parameter.Unstable
 
-module Simple_parameter = struct
-  type t = Hardcaml.Parameter_name.t * Hardcaml.Parameter.Value.Unstable.t
+module Parameter = struct
+  type t = Hardcaml.Parameter.t [@@deriving equal]
+
+  type simple_parameter = Hardcaml.Parameter_name.t * Hardcaml.Parameter.Value.Unstable.t
   [@@deriving sexp]
-end
 
-type 'param t_param =
-  { name : string
-  ; path : string
-  ; instantiates : 'param t_param list
-  ; params : 'param list
-  }
-[@@deriving compare, sexp]
+  let sexp_of_t (t : Hardcaml.Parameter.t) = sexp_of_simple_parameter (t.name, t.value)
 
-(* This is simply so we can write [(N (Int 16))] instead of [((name M) (value (Int 16)))]
-   in the sexps which define a verilog design parameter. *)
-module T_simple = struct
-  type t = Simple_parameter.t t_param [@@deriving sexp]
-
-  let rec to_simple (t : Parameter.t t_param) : t =
-    { name = t.name
-    ; path = t.path
-    ; instantiates = List.map t.instantiates ~f:to_simple
-    ; params = List.map t.params ~f:(fun { name; value } -> name, value)
-    }
+  let t_of_sexp s =
+    let name, value = simple_parameter_of_sexp s in
+    { Hardcaml.Parameter.name; value }
   ;;
 
-  let rec of_simple (t : t) : Parameter.t t_param =
-    { name = t.name
-    ; path = t.path
-    ; instantiates = List.map t.instantiates ~f:of_simple
-    ; params =
-        List.map t.params ~f:(fun (name, value) -> Hardcaml.Parameter.{ name; value })
-    }
+  let create = Hardcaml.Parameter.create
+  let name { Hardcaml.Parameter.name; value = _ } = Hardcaml.Parameter_name.to_string name
+  let value { Hardcaml.Parameter.name = _; value } = value
+
+  let string_of_value { Hardcaml.Parameter.name = _; value } =
+    match value with
+    | Int i -> Int.to_string i
+    | String s -> "\"" ^ s ^ "\""
+    | _ ->
+      raise_s [%message "Invalid parameter type" (value : Hardcaml.Parameter.Value.t)]
   ;;
 end
 
-type t = Parameter.t t_param [@@deriving compare]
+module Parameters = struct
+  type t = Parameter.t list [@@deriving sexp, equal]
 
-module File_io = struct
+  let rec replace (t : t) (parameter : Parameter.t) =
+    match t with
+    | [] -> []
+    | hd :: tl ->
+      if Hardcaml.Parameter_name.equal hd.name parameter.name
+      then parameter :: tl
+      else hd :: replace tl parameter
+  ;;
+
+  let replace t ~with_ = List.fold with_ ~init:t ~f:(fun ps p -> replace ps p)
+end
+
+module Define_value = struct
   type t =
-    | At_file_path of string
-    | Path_to_data of (string -> string)
+    | String of string
+    | Int of int
+    | No_arg
+  [@@deriving sexp, equal]
 
-  let ( ^/ ) = Caml.Filename.concat
-
-  (* Ensure files are accessible on the filesystem. Creates temporary files if required.
-  *)
-  let on_filesystem file_io file_name =
-    match file_io with
-    | At_file_path prefix -> prefix ^/ file_name, Fn.id
-    | Path_to_data f ->
-      let temp_file_name = Caml.Filename.temp_file "yosys" ".v" in
-      Out_channel.write_all temp_file_name ~data:(f file_name);
-      temp_file_name, fun () -> Unix.unlink temp_file_name
+  let to_string = function
+    | Int i -> Int.to_string i
+    | String s -> (* strings are not quoted in defines *) s
+    | No_arg -> raise_s [%message "Cannot convert [Define_value.No_arg] to string"]
   ;;
 end
 
-let sexp_of_t (t : t) = T_simple.sexp_of_t (T_simple.to_simple t)
-let t_of_sexp sexp = T_simple.t_of_sexp sexp |> T_simple.of_simple
-let equal = [%compare.equal: t]
-let ( ^: ) a b = if String.is_empty a then b else Caml.Filename.concat a b
+module Define = struct
+  type t =
+    { name : string
+    ; value : Define_value.t
+    }
+  [@@deriving equal, fields]
 
-let create ?file ?(instantiates = []) ?(params = []) ?(path = "") () ~name =
-  { name; path = path ^: Option.value file ~default:name ^ ".v"; instantiates; params }
+  type simple_define = string * Define_value.t [@@deriving sexp]
+
+  let sexp_of_t (t : t) = sexp_of_simple_define (t.name, t.value)
+
+  let t_of_sexp s =
+    let name, value = simple_define_of_sexp s in
+    { name; value }
+  ;;
+
+  let create ~name ~value = { name; value }
+end
+
+module Defines = struct
+  type t = Define.t list [@@deriving sexp, equal]
+end
+
+module Path = struct
+  type t = string [@@deriving sexp, equal]
+end
+
+module Module = struct
+  type t =
+    { module_name : string
+    ; path : Path.t
+    ; instantiates : t list [@sexp.default []]
+    ; parameters : Parameters.t [@sexp.default []]
+    ; blackbox : bool [@sexp.default false]
+    }
+  [@@deriving sexp, fields]
+
+  let create
+        ?(blackbox = false)
+        ?(parameters = [])
+        ?(instantiates = [])
+        ~module_name
+        ~path
+        ()
+    =
+    { module_name; path; instantiates; parameters; blackbox }
+  ;;
+
+  let override ?module_name ?path ?instantiates ?parameters ?blackbox t =
+    let module_name = Option.value module_name ~default:t.module_name in
+    let path = Option.value path ~default:t.path in
+    let instantiates = Option.value instantiates ~default:t.instantiates in
+    let parameters = Option.value parameters ~default:t.parameters in
+    let blackbox = Option.value blackbox ~default:t.blackbox in
+    create ~module_name ~path ~instantiates ~parameters ~blackbox ()
+  ;;
+
+  let rec iter t ~f =
+    List.iter (instantiates t) ~f:(fun t -> iter t ~f);
+    f t
+  ;;
+
+  let rec map t ~f =
+    f { t with instantiates = List.map (instantiates t) ~f:(fun t -> map t ~f) }
+  ;;
+
+  let rec flat_map t ~f =
+    let x = List.map (instantiates t) ~f:(fun t -> flat_map t ~f) |> List.concat in
+    f t :: x
+  ;;
+end
+
+type t =
+  { top : Module.t
+  ; defines : Defines.t [@sexp.default []]
+  }
+[@@deriving sexp, fields]
+
+let create ?(defines = []) ~top () = { top; defines }
+let top_name t = t.top.module_name
+let override_parameters t parameters = { t with top = Module.override ~parameters t.top }
+
+let map_paths t ~f =
+  { t with
+    top = Module.map t.top ~f:(fun m -> Module.override ~path:(f (Module.path m)) m)
+  }
 ;;
 
-let collect_verilog_files ~blackbox design =
-  (* ensure each verilog file is seen only once, the first time it is referenced *)
-  let first_occurrence_only designs =
-    let designs, _ =
-      List.fold
-        designs
-        ~init:([], Set.empty (module String))
-        ~f:(fun (ac, seen) (design : t) ->
-          if Set.mem seen design.path
-          then ac, seen
-          else design.path :: ac, Set.add seen design.path)
-    in
-    List.rev designs
-  in
-  (* get all files in design *)
-  let collect_hierarchy design =
-    let rec collect (design : t) =
-      let insts = List.concat @@ List.map ~f:collect design.instantiates in
-      design :: insts
-    in
-    (* We [List.rev] here so that module definitions are processed before module
-       uses. *)
-    let verilog = first_occurrence_only @@ List.rev @@ collect design in
-    verilog, []
-  in
-  (* find black boxes for top level module *)
-  let collect_first_level_only (design : t) =
-    let verilog = design.path in
-    let blackboxes = first_occurrence_only design.instantiates in
-    [ verilog ], blackboxes
-  in
-  if blackbox then collect_first_level_only design else collect_hierarchy design
+module type Crunched = sig
+  val read : string -> string option
+end
+
+let find_in_crunched crunched path =
+  List.find_map crunched ~f:(fun (module Crunched : Crunched) -> Crunched.read path)
+  |> Option.value_exn
+       ~error:
+         (Error.create_s [%message "Unable to extract crunched file" (path : string)])
 ;;
 
-let to_json ?(file_io = File_io.At_file_path "") ~blackbox (design : t) =
-  let verilog, blackboxes = collect_verilog_files ~blackbox design in
-  (* Ensure the verilog files are stored on the filesystem somewhere (this is required by
-     yosys). Clean up any temporary files created. *)
-  let verilog, blackboxes, cleanup =
-    let files f =
-      List.fold f ~init:([], Fn.id) ~f:(fun (fs, clean) f ->
-        let f, c = File_io.on_filesystem file_io f in
-        ( f :: fs
-        , fun () ->
-          c ();
-          clean () ))
-    in
-    let verilog, clean_verilog = files verilog in
-    let blackboxes, clean_blackboxes = files blackboxes in
-    ( verilog
-    , blackboxes
-    , fun () ->
-      clean_verilog ();
-      clean_blackboxes () )
-  in
-  let json =
-    Synthesize.convert_to_json_string
-      ~params:design.params
-      ~blackboxes
-      ~verilog
-      ~topname:design.name
-  in
-  cleanup ();
-  Or_error.ok_exn json
+let map_crunched_paths ?(delete_temp_files = true) crunched t =
+  let seen = Hashtbl.create (module String) in
+  map_paths t ~f:(fun path ->
+    match Hashtbl.find seen path with
+    | Some path -> path
+    | None ->
+      let tmp_file = Filename_unix.temp_file "crunched" ".v" in
+      if delete_temp_files then Caml.at_exit (fun () -> Unix.unlink tmp_file);
+      let data = find_in_crunched crunched path in
+      Stdio.Out_channel.write_all tmp_file ~data;
+      Hashtbl.set seen ~key:path ~data:tmp_file;
+      tmp_file)
 ;;
 
-let of_json ?topname ?use_netlist_names json_string =
-  let json_netlist = Json_netlist.of_string json_string in
-  let synthesized_designs =
-    Or_error.ok_exn
-      (Synthesized_designs.of_json_netlist
-         json_netlist
-         ~techlib:Techlib.Simlib.cells
-         ?use_netlist_names)
-  in
-  match topname with
-  | Some topname -> topname, Map.find_exn synthesized_designs topname
-  | None ->
-    (match Synthesized_designs.length synthesized_designs with
-     | 0 -> failwith "no design loaded"
-     | 1 -> Map.min_elt_exn synthesized_designs
-     | _ -> failwith "multiple designs loaded")
+module type Embedded_files = sig
+  val by_filename : (string * string) list
+end
+
+let find_in_embedded_files embedded_files path =
+  (* embed file strips any leading path out. *)
+  let file = Caml.Filename.basename path in
+  match
+    List.find_map embedded_files ~f:(fun (module Embedded_files : Embedded_files) ->
+      List.Assoc.find Embedded_files.by_filename file ~equal:String.equal)
+  with
+  | None -> raise_s [%message "Unable to extract crunched file" (path : string)]
+  | Some data -> data
 ;;
 
-let load ?file_io ~blackbox verilog_design =
-  let json_string =
-    let json_string = to_json ?file_io verilog_design ~blackbox in
-    json_string
-  in
-  let _, synthesized_design = of_json ~topname:verilog_design.name json_string in
-  synthesized_design
+let map_embed_file_paths ?(delete_temp_files = true) embedded_files t =
+  let seen = Hashtbl.create (module String) in
+  map_paths t ~f:(fun path ->
+    match Hashtbl.find seen path with
+    | Some path -> path
+    | None ->
+      let tmp_file = Filename_unix.temp_file "crunched" ".v" in
+      if delete_temp_files then Caml.at_exit (fun () -> Unix.unlink tmp_file);
+      let data = find_in_embedded_files embedded_files path in
+      Stdio.Out_channel.write_all tmp_file ~data;
+      Hashtbl.set seen ~key:path ~data:tmp_file;
+      tmp_file)
 ;;

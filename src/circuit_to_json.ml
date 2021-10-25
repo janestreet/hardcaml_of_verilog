@@ -1,6 +1,8 @@
 open Hardcaml
-open! Import
-open Yosys_atd_t
+open Base
+open Yosys_netlist
+
+let print_s = Stdio.Out_channel.print_s
 
 let port_name signal =
   match Signal.names signal with
@@ -23,7 +25,7 @@ let signal_op_to_string op =
 
 let create_module ~debug circuit =
   (* Create a set of signals we aren't rendering, so we should ignore them. *)
-  let ignore_set = Core.ref (Set.empty (module Int64)) in
+  let ignore_set = ref (Set.empty (module Int64)) in
   Signal_graph.iter (Circuit.signal_graph circuit) ~f:(fun signal ->
     match signal with
     | Reg { register; _ } ->
@@ -33,7 +35,7 @@ let create_module ~debug circuit =
   (* Create a map of signal uids which will be outputs of instances, with a list of
      selects driven by that uid. This will be used to correctly assign signals to outputs
      of instances. *)
-  let select_map = Core.ref (Map.empty (module Int64)) in
+  let select_map = ref (Map.empty (module Int64)) in
   Signal_graph.iter (Circuit.signal_graph circuit) ~f:(fun signal ->
     match signal with
     | Inst { signal_id; _ } ->
@@ -54,7 +56,7 @@ let create_module ~debug circuit =
     | _ -> ());
   (* We create a map of signal_ids that when seen we want to replace the signal_id, this
      is used when dealing with wires. *)
-  let driver_map = Core.ref (Map.empty (module Int64)) in
+  let driver_map = ref (Map.empty (module Int64)) in
   Signal_graph.iter (Circuit.signal_graph circuit) ~f:(fun signal ->
     match signal with
     | Wire { signal_id; driver } ->
@@ -67,41 +69,47 @@ let create_module ~debug circuit =
     | _ -> ());
   if debug
   then (
-    Core.print_s [%message (!ignore_set : Set.M(Int64).t)];
-    Core.print_s [%message (!driver_map : int64 Map.M(Int64).t)];
-    Core.print_s [%message (!select_map : (int64 * int * int) list Map.M(Int64).t)]);
+    print_s [%message (!ignore_set : Set.M(Int64).t)];
+    print_s [%message (!driver_map : int64 Map.M(Int64).t)];
+    print_s [%message (!select_map : (int64 * int * int) list Map.M(Int64).t)]);
   let rec get_driver s_id =
     match Map.find !driver_map s_id with
     | Some v -> get_driver v
     | None -> s_id
   in
-  let bit_name_of_uid uid = `Int (uid |> get_driver |> Int64.to_int_exn) in
+  let bit_name_of_uid uid = Bit.Index (uid |> get_driver |> Int64.to_int_exn) in
   let bit_name_of_signal signal =
-    `Int (Signal.uid signal |> get_driver |> Int64.to_int_exn)
+    Bit.Index (Signal.uid signal |> get_driver |> Int64.to_int_exn)
   in
   let create_cells circuit =
-    let default_attributes : attributes =
-      { src = ""; full_case = 0; parallel_case = 0; init = None; unused_bits = None }
-    in
+    (* let default_attributes : attributes =
+     *   { src = ""; full_case = 0; parallel_case = 0; init = None; unused_bits = None }
+     * in *)
     let default_cell =
-      { typ = ""
-      ; connections = []
-      ; port_directions = []
-      ; hide_name = 0
+      { Cell.V.module_name = ""
       ; parameters = []
-      ; attributes = default_attributes
+      ; port_directions = []
+      ; connections = []
+      ; hide_name = 0
       }
     in
-    let cells = ref ([] : (string * cell) list) in
+    let cells = ref ([] : (string * Cell.V.t) list) in
     Signal_graph.iter (Circuit.signal_graph circuit) ~f:(fun signal ->
       if debug then Stdio.printf "%s\n" (Signal.to_string signal);
       let cell =
+        let connections =
+          List.map ~f:(fun (name, bits) -> Connection.{ name; value = bits })
+        in
+        let port_dirns =
+          List.map ~f:(fun (name, dirn) -> Port_direction.{ name; value = dirn })
+        in
+        let open Direction in
         match signal with
         | Reg { d; signal_id; register } ->
           Some
             ( "$procdff$" ^ Int64.to_string signal_id.s_id
             , { default_cell with
-                typ = "$our_dff"
+                module_name = "$our_dff"
               ; connections =
                   [ "D", [ bit_name_of_signal d ]
                   ; "CLR", [ bit_name_of_signal register.reg_clear ]
@@ -110,25 +118,28 @@ let create_module ~debug circuit =
                   ; "CE", [ bit_name_of_signal register.reg_enable ]
                   ; "Q", [ bit_name_of_uid signal_id.s_id ]
                   ]
+                  |> connections
               ; port_directions =
-                  [ "CLK", `Input
-                  ; "CE", `Input
-                  ; "CLR", `Input
-                  ; "RST", `Input
-                  ; "D", `Input
-                  ; "Q", `Output
+                  [ "CLK", Input
+                  ; "CE", Input
+                  ; "CLR", Input
+                  ; "RST", Input
+                  ; "D", Input
+                  ; "Q", Output
                   ]
+                  |> port_dirns
               } )
         | Cat { signal_id; args } ->
           Some
             ( "$mygate" ^ Int64.to_string signal_id.s_id
             , { default_cell with
-                typ = "$cat"
+                module_name = "$cat"
               ; connections =
                   [ "A", List.map args ~f:bit_name_of_signal
                   ; "Y", [ bit_name_of_uid signal_id.s_id ]
                   ]
-              ; port_directions = [ "A", `Input; "Y", `Output ]
+                  |> connections
+              ; port_directions = [ "A", Input; "Y", Output ] |> port_dirns
               } )
         | Empty -> None
         | Const { signal_id; constant } ->
@@ -148,20 +159,22 @@ let create_module ~debug circuit =
             Some
               ( name
               , { default_cell with
-                  typ = name
-                ; connections = [ "Y", [ bit_name_of_uid signal_id.s_id ] ]
-                ; port_directions = [ "Y", `Output ]
+                  module_name = name
+                ; connections =
+                    [ "Y", [ bit_name_of_uid signal_id.s_id ] ] |> connections
+                ; port_directions = [ "Y", Output ] |> port_dirns
                 } ))
         | Not { arg; signal_id } ->
           Some
             ( "$not" ^ Int64.to_string signal_id.s_id
             , { default_cell with
-                typ = "$inv"
+                module_name = "$inv"
               ; connections =
                   [ "A", [ bit_name_of_signal arg ]
                   ; "Y", [ bit_name_of_uid signal_id.s_id ]
                   ]
-              ; port_directions = [ "A", `Input; "Y", `Output ]
+                  |> connections
+              ; port_directions = [ "A", Input; "Y", Output ] |> port_dirns
               } )
         | Wire _ -> None
         | Select { arg; signal_id; high; low } ->
@@ -180,27 +193,28 @@ let create_module ~debug circuit =
                 in
                 ( select_name
                 , { default_cell with
-                    typ = select_name
+                    module_name = select_name
                   ; connections =
                       [ "A", [ bit_name_of_signal arg ]
                       ; "Y", [ bit_name_of_uid signal_id.s_id ]
                       ]
-                  ; port_directions = [ "A", `Input; "Y", `Output ]
+                      |> connections
+                  ; port_directions = [ "A", Input; "Y", Output ] |> port_dirns
                   } ))
            | _ -> None)
         | Mem { signal_id; _ } ->
           Some
             ( "Memory"
             , { default_cell with
-                typ = "$mem"
-              ; connections = [ "A", [ bit_name_of_uid signal_id.s_id ] ]
-              ; port_directions = [ "A", `Input ]
+                module_name = "$mem"
+              ; connections = [ "A", [ bit_name_of_uid signal_id.s_id ] ] |> connections
+              ; port_directions = [ "A", Input ] |> port_dirns
               } )
         | Multiport_mem { signal_id; write_ports; _ } ->
           Some
             ( "$memory" ^ Int64.to_string signal_id.s_id
             , { default_cell with
-                typ = "$multiportmem"
+                module_name = "$multiportmem"
               ; connections =
                   List.concat
                     Array.(
@@ -216,52 +230,57 @@ let create_module ~debug circuit =
                         ])
                       |> to_list)
                   @ [ "A", [ bit_name_of_uid signal_id.s_id ] ]
+                  |> connections
               ; port_directions =
                   List.concat
                     Array.(
                       mapi write_ports ~f:(fun i _ ->
-                        [ "WR_DATA" ^ Int.to_string i, `Input
-                        ; "WR_EN" ^ Int.to_string i, `Input
-                        ; "WR_ADDR" ^ Int.to_string i, `Input
-                        ; "WR_CLK" ^ Int.to_string i, `Input
+                        [ "WR_DATA" ^ Int.to_string i, Input
+                        ; "WR_EN" ^ Int.to_string i, Input
+                        ; "WR_ADDR" ^ Int.to_string i, Input
+                        ; "WR_CLK" ^ Int.to_string i, Input
                         ])
                       |> to_list)
-                  @ [ "A", `Input ]
+                  @ [ "A", Input ]
+                  |> port_dirns
               } )
         | Mem_read_port { signal_id; _ } ->
           Some
             ( "$mem_read_port" ^ Int64.to_string signal_id.s_id
             , { default_cell with
-                typ = "$memreadport"
-              ; connections = [ "A", [ bit_name_of_uid signal_id.s_id ] ]
-              ; port_directions = [ "A", `Input ]
+                module_name = "$memreadport"
+              ; connections = [ "A", [ bit_name_of_uid signal_id.s_id ] ] |> connections
+              ; port_directions = [ "A", Input ] |> port_dirns
               } )
         | Op2 { signal_id; op; arg_a; arg_b } ->
           Some
             ( "$gate" ^ Int64.to_string signal_id.s_id
             , { default_cell with
-                typ = signal_op_to_string op
+                module_name = signal_op_to_string op
               ; connections =
                   [ "A", [ bit_name_of_signal arg_a ]
                   ; "B", [ bit_name_of_signal arg_b ]
                   ; "Y", [ bit_name_of_uid signal_id.s_id ]
                   ]
-              ; port_directions = [ "A", `Input; "B", `Input; "Y", `Output ]
+                  |> connections
+              ; port_directions = [ "A", Input; "B", Input; "Y", Output ] |> port_dirns
               } )
         | Mux { signal_id; select; cases } ->
           Some
             ( "$mux" ^ Int64.to_string signal_id.s_id
             , { default_cell with
-                typ = "$our_mux"
+                module_name = "$our_mux"
               ; connections =
                   List.mapi cases ~f:(fun i a ->
                     "A" ^ Int.to_string i, [ bit_name_of_signal a ])
                   @ [ "S", [ bit_name_of_signal select ] ]
                   @ [ "Y", [ bit_name_of_uid signal_id.s_id ] ]
+                  |> connections
               ; port_directions =
-                  List.mapi cases ~f:(fun i _ -> "A" ^ Int.to_string i, `Input)
-                  @ [ "S", `Input ]
-                  @ [ "Y", `Output ]
+                  List.mapi cases ~f:(fun i _ -> "A" ^ Int.to_string i, Input)
+                  @ [ "S", Input ]
+                  @ [ "Y", Output ]
+                  |> port_dirns
               } )
         | Inst { signal_id; instantiation; _ } ->
           (* Get the list of selects this instance drives. *)
@@ -269,7 +288,7 @@ let create_module ~debug circuit =
           Some
             ( "$mygate" ^ Int64.to_string signal_id.s_id
             , { default_cell with
-                typ = "$inst_" ^ instantiation.inst_instance
+                module_name = "$inst_" ^ instantiation.inst_instance
               ; connections =
                   List.mapi instantiation.inst_inputs ~f:(fun _i (n, s) ->
                     n, [ bit_name_of_signal s ])
@@ -283,16 +302,18 @@ let create_module ~debug circuit =
                         | Some (signal_id, _, _) ->
                           Some (n, [ bit_name_of_uid signal_id ])
                         | None -> None)
+                  |> connections
               ; port_directions =
-                  List.mapi instantiation.inst_inputs ~f:(fun _i (n, _s) -> n, `Input)
+                  List.mapi instantiation.inst_inputs ~f:(fun _i (n, _s) -> n, Input)
                   @ List.filter_map
                       instantiation.inst_outputs
                       ~f:(fun (n, (_width, o_lo)) ->
                         match
                           List.find selects ~f:(fun (_id, _hi, lo) -> o_lo = lo)
                         with
-                        | Some _ -> Some (n, `Output)
+                        | Some _ -> Some (n, Output)
                         | None -> None)
+                  |> port_dirns
               } )
       in
       Option.iter cell ~f:(fun cell -> cells := cell :: !cells));
@@ -300,18 +321,29 @@ let create_module ~debug circuit =
   in
   let inputs =
     List.map (Circuit.inputs circuit) ~f:(fun input ->
-      port_name input, { direction = `Input; bits = [ bit_name_of_signal input ] })
+      Port.
+        { name = port_name input
+        ; value = { direction = Input; bits = [ bit_name_of_signal input ] }
+        })
   in
   let outputs =
     List.map (Circuit.outputs circuit) ~f:(fun output ->
-      port_name output, { direction = `Output; bits = [ bit_name_of_signal output ] })
+      Port.
+        { name = port_name output
+        ; value = { direction = Output; bits = [ bit_name_of_signal output ] }
+        })
   in
-  ( Circuit.name circuit
-  , { ports = inputs @ outputs; cells = create_cells circuit; netnames = [] } )
+  { Module.name = Circuit.name circuit
+  ; value =
+      { ports = inputs @ outputs
+      ; cells =
+          List.map (create_cells circuit) ~f:(fun (name, cell) ->
+            { Cell.name; value = cell })
+      ; netnames = []
+      }
+  }
 ;;
 
 let convert ?(debug = false) circuit =
-  { creator = "hardcaml"; modl = [ create_module circuit ~debug ] }
+  { creator = "hardcaml"; modules = [ create_module circuit ~debug ] }
 ;;
-
-let to_string t = Yosys_atd_j.string_of_t t

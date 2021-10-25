@@ -1,3 +1,4 @@
 (library (name hardcaml_of_verilog_test)
- (preprocess (pps ppx_jane ppx_deriving_hardcaml))
- (libraries core_kernel.core expect_test_helpers_core hardcaml_of_verilog))
+ (libraries core_kernel.core core.core_unix core.filename_unix
+  hardcaml_of_verilog expect_test_helpers_core)
+ (preprocess (pps ppx_jane ppx_deriving_hardcaml)))

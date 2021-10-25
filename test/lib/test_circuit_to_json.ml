@@ -23,12 +23,12 @@ let create (i : _ I.t) =
 ;;
 
 let%expect_test "simple adder to json" =
-  let module Circuit = Circuit.With_interface (I) (O) in
+  let module Circuit = Hardcaml.Circuit.With_interface (I) (O) in
   let circuit = Circuit.create_exn ~name:"adder" create in
-  let json = Circuit_to_json.(convert ~debug:true circuit |> to_string) in
-  (* Prettify the output string. *)
-  Yojson.pretty_to_string (Yojson.Raw.from_string json :> Yojson.t)
-  |> Out_channel.print_string;
+  let json =
+    Circuit_to_json.convert ~debug:true circuit |> Expert.Yosys_netlist.to_string_hum
+  in
+  Out_channel.print_string json;
   [%expect
     {|
     (!ignore_set (11 12))
@@ -54,34 +54,76 @@ let%expect_test "simple adder to json" =
       "modules": {
         "adder": {
           "ports": {
-            "clear": { "direction": "input", "bits": [ 1 ] },
-            "clock": { "direction": "input", "bits": [ 3 ] },
-            "b": { "direction": "input", "bits": [ 5 ] },
-            "a": { "direction": "input", "bits": [ 7 ] },
-            "y": { "direction": "output", "bits": [ 14 ] }
+            "clear": {
+              "direction": "input",
+              "bits": [
+                1
+              ]
+            },
+            "clock": {
+              "direction": "input",
+              "bits": [
+                3
+              ]
+            },
+            "b": {
+              "direction": "input",
+              "bits": [
+                5
+              ]
+            },
+            "a": {
+              "direction": "input",
+              "bits": [
+                7
+              ]
+            },
+            "y": {
+              "direction": "output",
+              "bits": [
+                14
+              ]
+            }
           },
           "cells": {
             "$vdd_13": {
               "hide_name": 0,
               "type": "$vdd_13",
               "parameters": {},
-              "attributes": {},
-              "port_directions": { "Y": "output" },
-              "connections": { "Y": [ 13 ] }
+              "port_directions": {
+                "Y": "output"
+              },
+              "connections": {
+                "Y": [
+                  13
+                ]
+              }
             },
             "$gate10": {
               "hide_name": 0,
               "type": "$add",
               "parameters": {},
-              "attributes": {},
-              "port_directions": { "A": "input", "B": "input", "Y": "output" },
-              "connections": { "A": [ 7 ], "B": [ 5 ], "Y": [ 10 ] }
+              "port_directions": {
+                "A": "input",
+                "B": "input",
+                "Y": "output"
+              },
+              "connections": {
+                "A": [
+                  7
+                ],
+                "B": [
+                  5
+                ],
+                "Y": [
+                  10
+                ]
+              }
             },
             "$procdff$14": {
               "hide_name": 0,
               "type": "$our_dff",
               "parameters": {},
-              "attributes": {},
               "port_directions": {
                 "CLK": "input",
                 "CE": "input",
@@ -91,12 +133,24 @@ let%expect_test "simple adder to json" =
                 "Q": "output"
               },
               "connections": {
-                "D": [ 10 ],
-                "CLR": [ 1 ],
-                "RST": [ 0 ],
-                "CLK": [ 3 ],
-                "CE": [ 13 ],
-                "Q": [ 14 ]
+                "D": [
+                  10
+                ],
+                "CLR": [
+                  1
+                ],
+                "RST": [
+                  0
+                ],
+                "CLK": [
+                  3
+                ],
+                "CE": [
+                  13
+                ],
+                "Q": [
+                  14
+                ]
               }
             }
           },

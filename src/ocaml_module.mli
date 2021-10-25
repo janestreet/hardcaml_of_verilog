@@ -2,18 +2,32 @@
     the implementation at runtime. Interface widths are adjusted based on instantiation
     parameters. *)
 
-open Hardcaml
+open Base
 
 module Rebuild_interfaces
-    (I : Interface.S)
-    (O : Interface.S) (X : sig
-                         val loaded_design : Synthesized_design.t
-                       end) : sig
-  module I : Interface.S with type 'a t = 'a I.t
-  module O : Interface.S with type 'a t = 'a O.t
+    (I : Hardcaml.Interface.S)
+    (O : Hardcaml.Interface.S) (X : sig
+                                  val verilog_design : Verilog_design.t
+                                  val loaded_design : Verilog_circuit.t
+                                end) : sig
+  val verilog_design : Verilog_design.t
 
-  val create : Signal.t Interface.Create_fn(I)(O).t
+  module I : Hardcaml.Interface.S with type 'a t = 'a I.t
+  module O : Hardcaml.Interface.S with type 'a t = 'a O.t
+
+  val create : Hardcaml.Signal.t Hardcaml.Interface.Create_fn(I)(O).t
+
+  val inst
+    :  ?name:string
+    -> ?instance:string
+    -> Hardcaml.Signal.t Hardcaml.Interface.Create_fn(I)(O).t
+
+  val hierarchical
+    :  ?name:string
+    -> ?instance:string
+    -> Hardcaml.Scope.t
+    -> Hardcaml.Signal.t Hardcaml.Interface.Create_fn(I)(O).t
 end
 
-val to_ocaml : Verilog_design.t -> Synthesized_design.t -> string
-val save_ocaml : Verilog_design.t -> Synthesized_design.t -> file:string -> unit
+val to_ocaml : Verilog_design.t -> Verilog_circuit.t -> string
+val save_ocaml : Verilog_design.t -> Verilog_circuit.t -> file:string -> unit

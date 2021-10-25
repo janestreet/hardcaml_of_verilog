@@ -108,30 +108,23 @@ yosys> write_json design.json      # write json netlist
 
 #### Hardcaml usage
 
+Convert a single verilog file.
+
 ```ocaml
-let load_json_and_save_rtl ~black_box ~keep_names ~vhdl ~core_name ~json_file =
-  (* read the json netlist *)
-  let fns =
-    Synthesized_designs.of_json_netlist_exn
-      ~allow_blackboxes:black_box
-      ~use_netlist_names:keep_names
-      ~techlib:Techlib.Simlib.cells
-      (Json_netlist.from_file json_file)
+let convert_verilog ?verbose ?passes verilog_file =
+  (* Create a [Verilog_design] which represents the files and modules in the design hierarchy *)
+  let verilog_design =
+    Verilog_design.create
+      ~top:(Verilog_design.Module.create ~module_name:"top" ~path:verilog_file ())
+      ()
   in
-  (* find the required design *)
-  let design = Map.find_exn fns core_name in
-  (* build the design *)
-  let inputs =
-    List.map (Synthesized_design.inputs design) ~f:(fun (n, b) -> n, Signal.input n b)
+  (* Synthesize to a [Netlist] *)
+  let%bind.Or_error netlist = Netlist.create ?verbose ?passes verilog_design in
+  (* Convert to a Hardcaml [Circuit] *)
+  let%bind.Or_error verilog_circuit =
+    Verilog_circuit.create netlist ~top_name:(Verilog_design.top_name verilog_design)
   in
-  let outputs = Synthesized_design.create_fn design inputs in
-  (* write back to vhdl or verilog *)
-  let circ =
-    Circuit.create_exn
-      ~name:(Synthesized_design.name design)
-      (List.map outputs ~f:(fun (n, s) -> Signal.output n s))
-  in
-  if vhdl then Rtl.print Vhdl circ else Rtl.print Verilog circ
+  Verilog_circuit.to_hardcaml_circuit verilog_circuit
 ;;
 ```
 

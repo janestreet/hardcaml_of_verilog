@@ -1,85 +1,46 @@
-open! Import
-open! Synthesize
+open Core
 
-let tempfile ext = Filename.temp_file "hardcaml_of_verilog_synthesize_" ext
+let top = Test_verilog_design.top
 
-let%expect_test "[to_json_netlist]" =
-  let verilog = {| module foo(input a, output b); assign b = !a; endmodule |} in
-  let tmp = tempfile ".v" in
-  let tmp_pattern = String.Search_pattern.create tmp in
-  Out_channel.write_all tmp ~data:verilog;
-  let json_string =
-    Synthesize.convert_to_json_string
-      ~params:[]
-      ~topname:"foo"
-      ~blackboxes:[]
-      ~verilog:[ tmp ]
+let%expect_test "yosys script" =
+  let script =
+    Hardcaml_of_verilog.Expert.Synthesize.yosys_script top ~json_file:"out.json"
   in
-  Unix.unlink tmp;
-  (match json_string with
-   | Ok json_string ->
-     print_endline
-       (String.Search_pattern.replace_all tmp_pattern ~in_:json_string ~with_:"<tmp.v>")
-   | Error error -> print_s [%message (error : Error.t)]);
+  Out_channel.print_string script;
   [%expect
     {|
-    {
-      "creator": "Yosys 0.9 (git sha1 UNKNOWN, gcc 4.8.5 -fPIC -Os)",
-      "modules": {
-        "foo": {
-          "attributes": {
-            "top": 1,
-            "src": "<tmp.v>:1"
-          },
-          "ports": {
-            "a": {
-              "direction": "input",
-              "bits": [ 2 ]
-            },
-            "b": {
-              "direction": "output",
-              "bits": [ 3 ]
-            }
-          },
-          "cells": {
-            "$logic_not$<tmp.v>:1$1": {
-              "hide_name": 1,
-              "type": "$logic_not",
-              "parameters": {
-                "A_SIGNED": 0,
-                "A_WIDTH": 1,
-                "Y_WIDTH": 1
-              },
-              "attributes": {
-                "src": "<tmp.v>:1"
-              },
-              "port_directions": {
-                "A": "input",
-                "Y": "output"
-              },
-              "connections": {
-                "A": [ 2 ],
-                "Y": [ 3 ]
-              }
-            }
-          },
-          "netnames": {
-            "a": {
-              "hide_name": 0,
-              "bits": [ 2 ],
-              "attributes": {
-                "src": "<tmp.v>:1"
-              }
-            },
-            "b": {
-              "hide_name": 0,
-              "bits": [ 3 ],
-              "attributes": {
-                "src": "<tmp.v>:1"
-              }
-            }
-          }
-        }
-      }
-    } |}]
+    read_verilog  -defer -lib vlog/bar.v
+    read_verilog  -defer vlog/brumble.v
+    read_verilog  -defer vlog/fudge.v
+    read_verilog  -defer vlog/foo.v
+    chparam -set A 1 -set B "popcorn" foo
+    hierarchy -top foo
+    proc
+    flatten
+    memory -nomap
+    opt
+    clean
+    opt -mux_undef
+    clean
+    write_json out.json |}]
+;;
+
+let%expect_test "custom passes" =
+  let script =
+    Hardcaml_of_verilog.Expert.Synthesize.yosys_script
+      ~passes:[ Clean ]
+      top
+      ~json_file:"out.json"
+  in
+  Out_channel.print_string script;
+  [%expect
+    {|
+    read_verilog  -defer -lib vlog/bar.v
+    read_verilog  -defer vlog/brumble.v
+    read_verilog  -defer vlog/fudge.v
+    read_verilog  -defer vlog/foo.v
+    chparam -set A 1 -set B "popcorn" foo
+    hierarchy -top foo
+    clean
+    write_json out.json |}]
 ;;

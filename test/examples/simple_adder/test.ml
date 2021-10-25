@@ -1,8 +1,8 @@
-module Default = struct
-  let blackbox = false
+open Base
 
-  (* Files are in the location specified in the Verilog_design.t sexp. *)
-  let file_io = None
+module Default = struct
+  let verbose = false
+  let map_verilog_design = Fn.id
 end
 
 let simple_adder_8 () =
@@ -29,18 +29,28 @@ let simple_adder () =
   Circ.create_exn ~name:Simple_adder.name Inst.create |> Hardcaml.Rtl.print Verilog
 ;;
 
-let carry_save_adder blackbox =
+let carry_save_adder () =
   let module Inst =
     Carry_save_adder.From_verilog
       ()
       (struct
-        let blackbox = blackbox
+        let verbose = false
 
-        (* Example custom read mode.  Just reads the file at the given path. *)
-        let file_io =
-          Some
-            (Hardcaml_of_verilog.Verilog_design.File_io.Path_to_data
-               Stdio.In_channel.read_all)
+        (* Example custom read mode. Copies the file to tmp, and modifies the
+           verilog_design. Note we must take care to share files if there are multiple
+           verilog modules in the same file. *)
+        let map_verilog_design v =
+          let seen = Hashtbl.create (module String) in
+          Hardcaml_of_verilog.Verilog_design.map_paths v ~f:(fun path ->
+            match Hashtbl.find seen path with
+            | None ->
+              let tmp_file = Filename_unix.temp_file "tmp" ".v" in
+              Stdio.Out_channel.write_all
+                tmp_file
+                ~data:(Stdio.In_channel.read_all path);
+              Hashtbl.set seen ~key:path ~data:tmp_file;
+              tmp_file
+            | Some tmp_file -> tmp_file)
         ;;
       end)
   in
@@ -62,6 +72,6 @@ let carry_save_adder_json () =
 let () = simple_adder_8 ()
 let () = simple_adder_16 ()
 let () = simple_adder ()
-let () = carry_save_adder false
-let () = carry_save_adder true
+let () = carry_save_adder ()
+let () = carry_save_adder ()
 let () = carry_save_adder_json ()

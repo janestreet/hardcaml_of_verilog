@@ -57,11 +57,11 @@
 
 *)
 
-open! Import
+open! Base
 open Hardcaml
 open Signal
 
-module type Cfg = sig
+module type Config = sig
   val abits : int
   val dbits : int
   val size : int
@@ -118,7 +118,7 @@ type rd_port =
   ; mode : mode
   }
 
-module Ports (C : Cfg) = struct
+module Ports (C : Config) = struct
   module Wr = struct
     include Wr
 
@@ -134,7 +134,7 @@ module Ports (C : Cfg) = struct
   end
 end
 
-module Multiport_regs (C : Cfg) = struct
+module Multiport_regs (C : Config) = struct
   (* async read memories with multiple read and write ports, implemented as registers *)
 
   open C
@@ -181,7 +181,7 @@ module Multiport_regs (C : Cfg) = struct
   ;;
 end
 
-module Make (C : Cfg) = struct
+module Make (C : Config) = struct
   include Ports (C)
   open Wr
   open Rd
@@ -260,7 +260,7 @@ module Make (C : Cfg) = struct
   ;;
 end
 
-module Make_wren (C : Cfg) = struct
+module Make_wren (C : Config) = struct
   module Wr = struct
     include Wr
 

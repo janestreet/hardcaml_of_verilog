@@ -1,8 +1,8 @@
-open! Import
+open! Base
 open Hardcaml
 open Signal
 
-module type Cfg = sig
+module type Config = sig
   val abits : int
   val dbits : int
   val size : int
@@ -49,23 +49,23 @@ type rd_port =
   ; mode : mode
   }
 
-module Multiport_regs (C : Cfg) : sig
+module Multiport_regs (C : Config) : sig
   module Wr : module type of Wr with type 'a t = 'a Wr.t
   module Rd : module type of Rd with type 'a t = 'a Rd.t
 
   val memory : wr:wr_port array -> rd:rd_port array -> t array
 end
 
-module Make (C : Cfg) : sig
+module Make (C : Config) : sig
   module Wr : module type of Wr with type 'a t = 'a Wr.t
   module Rd : module type of Rd with type 'a t = 'a Rd.t
 
   val memory : wr:wr_port array -> rd:rd_port array -> t array
 end
 
-module Make_wren (C : Cfg) : sig
+module Make_wren (C : Config) : sig
   module Wr : module type of Wr with type 'a t = 'a Wr.t
   module Rd : module type of Rd with type 'a t = 'a Rd.t
 
-  val memory : layout:int array array -> wr:wr_port array -> rd:rd_port array -> t array
+  val memory : layout:_ array array -> wr:wr_port array -> rd:rd_port array -> t array
 end

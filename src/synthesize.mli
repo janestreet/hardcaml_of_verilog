@@ -1,25 +1,16 @@
-(** Synthesize a Verilog design in json *)
+open Base
 
-open! Import
+val yosys_script : ?passes:Pass.t list -> Verilog_design.t -> json_file:string -> string
 
-val convert_to_json_file
-  :  params:Parameter.t list
-  -> topname:string
-  -> blackboxes:string list
-  -> verilog:string list
+val to_json_file
+  :  ?verbose:bool
+  -> ?passes:Pass.t list
+  -> Verilog_design.t
   -> json_file:string
   -> unit Or_error.t
 
-val convert_to_json_string
-  :  params:Parameter.t list
-  -> topname:string
-  -> blackboxes:string list
-  -> verilog:string list
-  -> string Or_error.t
-
-val convert_to_json_netlist
-  :  params:Parameter.t list
-  -> topname:string
-  -> blackboxes:string list
-  -> verilog:string list
-  -> Json_netlist.t Or_error.t
+val to_yosys_netlist
+  :  ?verbose:bool
+  -> ?passes:Pass.t list
+  -> Verilog_design.t
+  -> Yosys_netlist.t Or_error.t

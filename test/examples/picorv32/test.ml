@@ -1,12 +1,12 @@
-(* *)
+open Base
 
 let picorv32 () =
   let module Inst =
     Picorv32.From_verilog
       (Picorv32.P)
       (struct
-        let blackbox = false
-        let file_io = None
+        let verbose = true
+        let map_verilog_design = Fn.id
       end)
   in
   let module Circ = Hardcaml.Circuit.With_interface (Inst.I) (Inst.O) in

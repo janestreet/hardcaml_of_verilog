@@ -6,4 +6,4 @@
   picorv32.sexp)
  (action
   (bash
-   "%{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe verilog-design ocaml-module -design picorv32.sexp > picorv32.ml")))
+   "%{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe synthesize ocaml-module -i picorv32.sexp -o picorv32.ml")))

@@ -1,11 +1,12 @@
 module Circuit_to_json = Circuit_to_json
-module Interface = Interface
-module Json_netlist = Json_netlist
-module Lvt = Lvt
+module Netlist = Netlist
 module Ocaml_module = Ocaml_module
-module Run = Run
-module Synthesized_design = Synthesized_design
-module Synthesized_designs = Synthesized_designs
-module Synthesize = Synthesize
-module Techlib = Techlib
+module Pass = Pass
+module Verilog_circuit = Verilog_circuit
 module Verilog_design = Verilog_design
+module With_interface = With_interface
+
+module Expert = struct
+  module Synthesize = Synthesize
+  module Yosys_netlist = Yosys_netlist
+end
