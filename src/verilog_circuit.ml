@@ -1,6 +1,5 @@
 open Base
 module Bus = Netlist.Bus
-module Bus_names = Netlist.Bus_names
 module Cell = Netlist.Cell
 module Port = Netlist.Port
 

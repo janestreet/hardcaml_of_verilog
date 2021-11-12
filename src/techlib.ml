@@ -838,7 +838,7 @@ end
 (* module mem = struct ... end *)
 
 (* must use 'memory -dff' *)
-module Memwr = struct
+module _ = struct
   module P = struct
     type 'a t =
       { priority : 'a [@rtlname "PRIORITY"]
@@ -906,7 +906,7 @@ module Memwr = struct
   let _cells = [ memwr ] |> List.map ~f:W.cell_implementation
 end
 
-module Memrd = struct
+module _ = struct
   module P = struct
     type 'a t =
       { transparent : 'a [@rtlname "TRANSPARENT"]
