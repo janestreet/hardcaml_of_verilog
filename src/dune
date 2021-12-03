@@ -1,5 +1,5 @@
 (library (name hardcaml_of_verilog)
- (libraries base hardcaml core.filename_unix jsonaf stdio unix)
+ (libraries base hardcaml core_unix.filename_unix jsonaf stdio unix)
  (preprocess (pps ppx_jane ppx_jsonaf_conv ppx_deriving_hardcaml)))
 
 (rule (targets config.ml) (deps)
