@@ -11,7 +11,15 @@ build: [
 ]
 depends: [
   "ocaml" {>= "4.08.0"}
-  "dune" {>= "2.0.0"}
+  "base"
+  "core_unix"
+  "hardcaml"
+  "jsonaf"
+  "ppx_deriving_hardcaml"
+  "ppx_jane"
+  "ppx_jsonaf_conv"
+  "stdio"
+  "dune"                  {>= "2.0.0"}
 ]
 synopsis: "Convert Verilog to a Hardcaml design"
 description: "
