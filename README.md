@@ -1,7 +1,7 @@
 "Hardcaml of Verilog"
 =====================
 
-Use the opensource verilog synthesis tool [Yosys](http://www.clifford.at/yosys)
+Use the opensource verilog synthesis tool [Yosys](https://github.com/YosysHQ/yosys)
 to read a synthesizable verilog design, convert it to a structural netlist
 and save it in a JSON file.
 

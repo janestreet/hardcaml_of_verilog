@@ -12,8 +12,10 @@ build: [
 depends: [
   "ocaml" {>= "4.08.0"}
   "base"
+  "core"
   "core_unix"
   "hardcaml"
+  "hardcaml_verify"
   "jsonaf"
   "ppx_deriving_hardcaml"
   "ppx_jane"
