@@ -3,7 +3,7 @@ open Base
 module Parameter = struct
   type t = Hardcaml.Parameter.t [@@deriving equal]
 
-  type simple_parameter = Hardcaml.Parameter_name.t * Hardcaml.Parameter.Value.Unstable.t
+  type simple_parameter = Hardcaml.Parameter_name.t * Hardcaml.Parameter.Value.t
   [@@deriving sexp]
 
   let sexp_of_t (t : Hardcaml.Parameter.t) = sexp_of_simple_parameter (t.name, t.value)
