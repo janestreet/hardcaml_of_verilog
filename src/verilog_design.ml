@@ -161,7 +161,7 @@ let map_crunched_paths ?(delete_temp_files = true) crunched t =
     | Some path -> path
     | None ->
       let tmp_file = Filename_unix.temp_file "crunched" ".v" in
-      if delete_temp_files then Caml.at_exit (fun () -> Unix.unlink tmp_file);
+      if delete_temp_files then Stdlib.at_exit (fun () -> Unix.unlink tmp_file);
       let data = find_in_crunched crunched path in
       Stdio.Out_channel.write_all tmp_file ~data;
       Hashtbl.set seen ~key:path ~data:tmp_file;
@@ -174,7 +174,7 @@ end
 
 let find_in_embedded_files embedded_files path =
   (* embed file strips any leading path out. *)
-  let file = Caml.Filename.basename path in
+  let file = Stdlib.Filename.basename path in
   match
     List.find_map embedded_files ~f:(fun (module Embedded_files : Embedded_files) ->
       List.Assoc.find Embedded_files.by_filename file ~equal:String.equal)
@@ -190,7 +190,7 @@ let map_embed_file_paths ?(delete_temp_files = true) embedded_files t =
     | Some path -> path
     | None ->
       let tmp_file = Filename_unix.temp_file "crunched" ".v" in
-      if delete_temp_files then Caml.at_exit (fun () -> Unix.unlink tmp_file);
+      if delete_temp_files then Stdlib.at_exit (fun () -> Unix.unlink tmp_file);
       let data = find_in_embedded_files embedded_files path in
       Stdio.Out_channel.write_all tmp_file ~data;
       Hashtbl.set seen ~key:path ~data:tmp_file;

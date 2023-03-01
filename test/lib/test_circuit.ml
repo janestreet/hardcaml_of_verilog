@@ -2,7 +2,7 @@ open! Core
 open Hardcaml_of_verilog
 
 let of_verilog ?verbose ?(netlist = false) ?passes verilog =
-  let verilog_file = Caml.Filename.temp_file "test" ".v" in
+  let verilog_file = Stdlib.Filename.temp_file "test" ".v" in
   Stdio.Out_channel.write_all verilog_file ~data:verilog;
   let verilog_design =
     Verilog_design.create

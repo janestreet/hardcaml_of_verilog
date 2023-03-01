@@ -75,7 +75,7 @@ let yosys_script ?(passes = default_passes) verilog_design ~json_file =
 
 let tmp_file ~unlink ext =
   let name = Filename_unix.temp_file "hardcaml_of_verilog_synthesize_" ext in
-  if unlink then Caml.at_exit (fun () -> Unix.unlink name);
+  if unlink then Stdlib.at_exit (fun () -> Unix.unlink name);
   name
 ;;
 
