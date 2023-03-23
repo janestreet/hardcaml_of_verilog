@@ -123,14 +123,14 @@ module Ports (C : Config) = struct
     include Wr
 
     let bits = { we = 1; wa = C.abits; d = C.dbits }
-    let t = map2 ~f:(fun (n, _) b -> n, b) t bits
+    let port_names_and_widths = zip port_names bits
   end
 
   module Rd = struct
     include Rd
 
     let bits = { re = 1; ra = C.abits }
-    let t = map2 ~f:(fun (n, _) b -> n, b) t bits
+    let port_names_and_widths = zip port_names bits
   end
 end
 
@@ -265,14 +265,14 @@ module Make_wren (C : Config) = struct
     include Wr
 
     let bits = { we = C.dbits; wa = C.abits; d = C.dbits }
-    let t = map2 ~f:(fun (n, _) b -> n, b) t bits
+    let port_names_and_widths = zip port_names bits
   end
 
   module Rd = struct
     include Rd
 
     let bits = { re = 1; ra = C.abits }
-    let t = map2 ~f:(fun (n, _) b -> n, b) t bits
+    let port_names_and_widths = zip port_names bits
   end
 
   module L = Make (C)

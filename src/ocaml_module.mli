@@ -15,18 +15,14 @@ module Rebuild_interfaces
   module I : Hardcaml.Interface.S with type 'a t = 'a I.t
   module O : Hardcaml.Interface.S with type 'a t = 'a O.t
 
-  val create : Hardcaml.Signal.t Hardcaml.Interface.Create_fn(I)(O).t
-
-  val inst
-    :  ?name:string
-    -> ?instance:string
-    -> Hardcaml.Signal.t Hardcaml.Interface.Create_fn(I)(O).t
+  val create : Hardcaml.Interface.Create_fn(I)(O).t
+  val inst : ?name:string -> ?instance:string -> Hardcaml.Interface.Create_fn(I)(O).t
 
   val hierarchical
     :  ?name:string
     -> ?instance:string
     -> Hardcaml.Scope.t
-    -> Hardcaml.Signal.t Hardcaml.Interface.Create_fn(I)(O).t
+    -> Hardcaml.Interface.Create_fn(I)(O).t
 end
 
 val to_ocaml : Verilog_design.t -> Verilog_circuit.t -> string

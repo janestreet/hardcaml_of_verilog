@@ -21,7 +21,9 @@ struct
     module T = struct
       include I
 
-      let t = map t ~f:(fun (n, _) -> n, (Verilog_circuit.Port.find_exn t_i n).value)
+      let port_names_and_widths =
+        map port_names ~f:(fun n -> n, (Verilog_circuit.Port.find_exn t_i n).value)
+      ;;
     end
 
     include T
@@ -32,7 +34,9 @@ struct
     module T = struct
       include O
 
-      let t = map ~f:(fun (n, _) -> n, (Verilog_circuit.Port.find_exn t_o n).value) t
+      let port_names_and_widths =
+        map port_names ~f:(fun n -> n, (Verilog_circuit.Port.find_exn t_o n).value)
+      ;;
     end
 
     include O
@@ -43,10 +47,10 @@ struct
     let i =
       I.(
         to_list
-        @@ map2 ~f:(fun (n, _) i -> Verilog_circuit.Port.{ name = n; value = i }) t i)
+        @@ map2 port_names i ~f:(fun n i -> Verilog_circuit.Port.{ name = n; value = i }))
     in
     let o = fn i |> Or_error.ok_exn in
-    O.(map ~f:(fun (n, _) -> (Verilog_circuit.Port.find_exn o n).value) t)
+    O.(map port_names ~f:(fun n -> (Verilog_circuit.Port.find_exn o n).value))
   ;;
 
   let inst ?(name = Verilog_design.top_name verilog_design) ?instance i =

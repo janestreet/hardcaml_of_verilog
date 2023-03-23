@@ -95,8 +95,7 @@ let create_circuit_outputs bus_map (outputs : Bus.t Port.t list) =
     | Some port -> port
     | None ->
       Or_error.error_s
-        [%message
-          "Cannot construct bus for top level output port" (port : Bus.t Port.t)])
+        [%message "Cannot construct bus for top level output port" (port : Bus.t Port.t)])
   |> Or_error.all
 ;;
 

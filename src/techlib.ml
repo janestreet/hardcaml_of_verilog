@@ -57,10 +57,10 @@ end = struct
 
   let of_list_p l =
     P.map
-      ~f:(fun (n, _) ->
+      ~f:(fun n ->
         let name = Parameter_name.of_string n in
         { Parameter.name; value = Parameter.find_name_exn l name })
-      P.t
+      P.port_names
   ;;
 
   let of_list_i l = I.map I.port_names ~f:(fun n -> find_exn l n)
@@ -868,7 +868,7 @@ module _ = struct
     I.{ en = p.P.width; clk = 1; data = p.P.width; addr = p.P.abits }
   ;;
 
-  let _get_output_width _ = O.(map ~f:snd t)
+  let _get_output_width _ = O.port_widths
 
   let memwr _ p i =
     let open I in
@@ -887,7 +887,7 @@ module _ = struct
     let p' =
       P.(
         to_list
-        @@ { (map2 ~f:(fun (name, _) x -> Parameter.create ~name ~value:(Int x)) t p) with
+        @@ { (map2 ~f:(fun name x -> Parameter.create ~name ~value:(Int x)) port_names p) with
              memid = Parameter.create ~name:"MEMID" ~value:(String memid)
            })
     in
@@ -896,10 +896,10 @@ module _ = struct
         ()
         ~name:"memwr"
         ~parameters:p'
-        ~inputs:I.(to_list @@ map2 ~f:(fun (n, _) x -> n, x) t i)
-        ~outputs:O.(to_list @@ map2 ~f:(fun (n, _) x -> n, x) t (_get_output_width p))
+        ~inputs:I.(to_list @@ zip port_names i)
+        ~outputs:O.(to_list @@ zip port_names (_get_output_width p))
     in
-    O.(map ~f:(fun (n, _) -> Map.find_exn inst n) t)
+    O.(map ~f:(fun n -> Map.find_exn inst n) port_names)
   ;;
 
   let memwr = "$memwr", memwr
@@ -953,7 +953,7 @@ module _ = struct
     let p' =
       P.(
         to_list
-        @@ { (map2 ~f:(fun (name, _) x -> Parameter.create ~name ~value:(Int x)) t p) with
+        @@ { (map2 ~f:(fun name x -> Parameter.create ~name ~value:(Int x)) port_names p) with
              memid = Parameter.create ~name:"MEMID" ~value:(String memid)
            })
     in
@@ -962,10 +962,10 @@ module _ = struct
         ()
         ~name:"memrd"
         ~parameters:p'
-        ~inputs:I.(to_list @@ map2 ~f:(fun (n, _) x -> n, x) t i)
-        ~outputs:O.(to_list @@ map2 ~f:(fun (n, _) x -> n, x) t (_get_output_width p))
+        ~inputs:I.(to_list @@ zip port_names i)
+        ~outputs:O.(to_list @@ zip port_names (_get_output_width p))
     in
-    O.(map ~f:(fun (n, _) -> Map.find_exn inst n) t)
+    O.(map ~f:(fun n -> Map.find_exn inst n) port_names)
   ;;
 
   let memrd = "$memrd", memrd

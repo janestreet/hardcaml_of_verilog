@@ -31,8 +31,7 @@ let simple_adder () =
 
 let carry_save_adder () =
   let module Inst =
-    Carry_save_adder.From_verilog
-      ()
+    Carry_save_adder.From_verilog ()
       (struct
         let verbose = false
 
@@ -45,9 +44,7 @@ let carry_save_adder () =
             match Hashtbl.find seen path with
             | None ->
               let tmp_file = Filename_unix.temp_file "tmp" ".v" in
-              Stdio.Out_channel.write_all
-                tmp_file
-                ~data:(Stdio.In_channel.read_all path);
+              Stdio.Out_channel.write_all tmp_file ~data:(Stdio.In_channel.read_all path);
               Hashtbl.set seen ~key:path ~data:tmp_file;
               tmp_file
             | Some tmp_file -> tmp_file)

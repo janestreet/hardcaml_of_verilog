@@ -160,8 +160,7 @@ let create_module ~debug circuit =
               ( name
               , { default_cell with
                   module_name = name
-                ; connections =
-                    [ "Y", [ bit_name_of_uid signal_id.s_id ] ] |> connections
+                ; connections = [ "Y", [ bit_name_of_uid signal_id.s_id ] ] |> connections
                 ; port_directions = [ "Y", Output ] |> port_dirns
                 } ))
         | Not { arg; signal_id } ->
@@ -219,14 +218,11 @@ let create_module ~debug circuit =
                   List.concat
                     Array.(
                       mapi write_ports ~f:(fun i a ->
-                        [ ( "WR_DATA" ^ Int.to_string i
-                          , [ bit_name_of_signal a.write_data ] )
-                        ; ( "WR_EN" ^ Int.to_string i
-                          , [ bit_name_of_signal a.write_enable ] )
+                        [ "WR_DATA" ^ Int.to_string i, [ bit_name_of_signal a.write_data ]
+                        ; "WR_EN" ^ Int.to_string i, [ bit_name_of_signal a.write_enable ]
                         ; ( "WR_ADDR" ^ Int.to_string i
                           , [ bit_name_of_signal a.write_address ] )
-                        ; ( "WR_CLK" ^ Int.to_string i
-                          , [ bit_name_of_signal a.write_clock ] )
+                        ; "WR_CLK" ^ Int.to_string i, [ bit_name_of_signal a.write_clock ]
                         ])
                       |> to_list)
                   @ [ "A", [ bit_name_of_uid signal_id.s_id ] ]
@@ -296,11 +292,8 @@ let create_module ~debug circuit =
                       instantiation.inst_outputs
                       ~f:(fun (n, (_width, o_lo)) ->
                         (* Try match each output with a select based on its hi and lo. *)
-                        match
-                          List.find selects ~f:(fun (_id, _hi, lo) -> o_lo = lo)
-                        with
-                        | Some (signal_id, _, _) ->
-                          Some (n, [ bit_name_of_uid signal_id ])
+                        match List.find selects ~f:(fun (_id, _hi, lo) -> o_lo = lo) with
+                        | Some (signal_id, _, _) -> Some (n, [ bit_name_of_uid signal_id ])
                         | None -> None)
                   |> connections
               ; port_directions =
@@ -308,9 +301,7 @@ let create_module ~debug circuit =
                   @ List.filter_map
                       instantiation.inst_outputs
                       ~f:(fun (n, (_width, o_lo)) ->
-                        match
-                          List.find selects ~f:(fun (_id, _hi, lo) -> o_lo = lo)
-                        with
+                        match List.find selects ~f:(fun (_id, _hi, lo) -> o_lo = lo) with
                         | Some _ -> Some (n, Output)
                         | None -> None)
                   |> port_dirns

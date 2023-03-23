@@ -144,7 +144,10 @@ let add_bus_to_select_map map signal (port : Bus.t Port.t) =
       (match bit with
        | Vdd | Gnd | X ->
          Or_error.error_s
-           [%message "Gnd, Vdd and X are not valid driver signals" (port : Bus.t Port.t)]
+           [%message
+             "Gnd, Vdd and X are not valid driver signals"
+               (port : Bus.t Port.t)
+               (signal : Hardcaml.Signal.t)]
        | Index index ->
          (match
             Map.add
@@ -256,16 +259,19 @@ let empty bus_names =
 let create (module_ : Netlist.Module.t) ~circuit_inputs =
   let%bind.Or_error inputs = Module_inputs.create circuit_inputs module_.inputs in
   let bus_map = empty module_.bus_names in
-  let%bind.Or_error bus_map =
+  match
     List.fold inputs ~init:(Ok bus_map) ~f:(fun map port ->
       let%bind.Or_error map = map in
       add_module_input map port.value.input_signal { port with value = port.value.bus })
-  in
-  let%bind.Or_error bus_map =
-    List.fold module_.cells ~init:(Ok bus_map) ~f:(fun map cell ->
-      List.fold cell.outputs ~init:map ~f:(fun map output ->
-        let%bind.Or_error map = map in
-        add_cell_output map cell output))
-  in
-  Ok bus_map
+  with
+  | Error e -> Or_error.error_s [%message "adding module inputs" (e : Error.t)]
+  | Ok bus_map ->
+    (match
+       List.fold module_.cells ~init:(Ok bus_map) ~f:(fun map cell ->
+         List.fold cell.outputs ~init:map ~f:(fun map output ->
+           let%bind.Or_error map = map in
+           add_cell_output map cell output))
+     with
+     | Error e -> Or_error.error_s [%message "adding cell outputs" (e : Error.t)]
+     | Ok bus_map -> Ok bus_map)
 ;;
