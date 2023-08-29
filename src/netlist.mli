@@ -20,7 +20,7 @@ module Port : sig
     { name : string
     ; value : 'a
     }
-  [@@deriving sexp_of, fields]
+  [@@deriving sexp_of, fields ~getters]
 
   val find : 'a t list -> string -> 'a t Or_error.t
   val find_exn : 'a t list -> string -> 'a t

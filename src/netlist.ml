@@ -25,7 +25,7 @@ module Port = struct
     { name : string
     ; value : 'a
     }
-  [@@deriving sexp_of, fields]
+  [@@deriving sexp_of, fields ~getters]
 
   let find (ports : _ t list) name =
     let rec f = function

@@ -11,7 +11,7 @@ type t =
       (Hardcaml.Signal.t Port.t list -> Hardcaml.Signal.t Port.t list Or_error.t
        [@sexp.opaque])
   }
-[@@deriving sexp_of, fields]
+[@@deriving sexp_of, fields ~getters]
 
 let cell_outputs bus_map (cell : Cell.t) =
   List.filter_map cell.outputs ~f:(fun port ->

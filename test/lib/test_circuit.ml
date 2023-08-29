@@ -136,7 +136,8 @@ endmodule
         /* logic */
         assign a_0 = a;
         assign x = a_0[0:0];
-        assign _7 = { _5, x };
+        assign _7 = { _5,
+                      x };
         assign _9 = _7 + _8;
         assign _3 = _9;
         assign b_0 = _3[0:0];
@@ -224,7 +225,9 @@ endmodule
         assign b_0 = b;
         foo
             the_foo
-            ( .b(b_0), .a(a_0), .c(_9) );
+            ( .b(b_0),
+              .a(a_0),
+              .c(_9) );
         assign _5 = _9;
         assign c_0 = _5;
 

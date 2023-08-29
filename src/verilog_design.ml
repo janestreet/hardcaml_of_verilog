@@ -60,7 +60,7 @@ module Define = struct
     { name : string
     ; value : Define_value.t
     }
-  [@@deriving equal, fields]
+  [@@deriving equal, fields ~getters]
 
   type simple_define = string * Define_value.t [@@deriving sexp]
 
@@ -90,7 +90,7 @@ module Module = struct
     ; parameters : Parameters.t [@sexp.default []]
     ; blackbox : bool [@sexp.default false]
     }
-  [@@deriving sexp, fields]
+  [@@deriving sexp, fields ~getters]
 
   let create
         ?(blackbox = false)
@@ -131,7 +131,7 @@ type t =
   { top : Module.t
   ; defines : Defines.t [@sexp.default []]
   }
-[@@deriving sexp, fields]
+[@@deriving sexp, fields ~getters]
 
 let create ?(defines = []) ~top () = { top; defines }
 let top_name t = t.top.module_name
