@@ -184,8 +184,7 @@ let testbench_mram () =
     (* fallthrough reads *)
     S.cycle sim
   done;
-  if not !no_waves
-  then Waveterm_widget.run Waveterm_waves.{ cfg = Config.default; waves };
+  if not !no_waves then Waveterm_widget.run Waveterm_waves.{ cfg = Config.default; waves };
   if !vlog then Rtl.print Verilog circ
 ;;
 

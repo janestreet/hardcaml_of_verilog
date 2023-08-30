@@ -51,8 +51,8 @@ module Cell = struct
   [@@deriving sexp_of]
 
   let partition_by_port_direction
-        (cell : Yosys_netlist.Cell.t)
-        (directions : Yosys_netlist.Direction.t Map.M(String).t)
+    (cell : Yosys_netlist.Cell.t)
+    (directions : Yosys_netlist.Direction.t Map.M(String).t)
     =
     let rec f inputs outputs (connections : Yosys_netlist.Connection.t list) =
       match connections with

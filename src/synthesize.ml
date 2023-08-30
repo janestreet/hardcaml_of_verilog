@@ -30,10 +30,10 @@ let get_parameters top =
 let get_defines top =
   V.defines top
   |> List.map ~f:(fun d ->
-    let value = V.Define.value d in
-    if V.Define_value.equal No_arg value
-    then [%string {|-D%{V.Define.name d}|}]
-    else [%string {|-D%{V.Define.name d}=%{V.Define_value.to_string value}|}])
+       let value = V.Define.value d in
+       if V.Define_value.equal No_arg value
+       then [%string {|-D%{V.Define.name d}|}]
+       else [%string {|-D%{V.Define.name d}=%{V.Define_value.to_string value}|}])
   |> String.concat ~sep:" "
 ;;
 

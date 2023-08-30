@@ -9,7 +9,7 @@ type t =
   ; outputs : int Port.t list
   ; create_fn :
       (Hardcaml.Signal.t Port.t list -> Hardcaml.Signal.t Port.t list Or_error.t
-       [@sexp.opaque])
+      [@sexp.opaque])
   }
 [@@deriving sexp_of, fields ~getters]
 
@@ -48,9 +48,9 @@ let instantiate_cell_not_in_techlib (bus_map : Circuit_bus_map.t) (cell : Cell.t
 ;;
 
 let assign_cell_outputs
-      cell
-      (cell_outputs : Hardcaml.Signal.t Port.t list)
-      (implementation_outputs : Hardcaml.Signal.t Port.t list)
+  cell
+  (cell_outputs : Hardcaml.Signal.t Port.t list)
+  (implementation_outputs : Hardcaml.Signal.t Port.t list)
   =
   let find name =
     match List.find cell_outputs ~f:(fun cell -> String.equal cell.name name) with

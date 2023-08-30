@@ -4,7 +4,6 @@ open Signal
 module Cell = Netlist.Cell
 module Port = Netlist.Port
 
-
 module Cell_implementation = struct
   type create_fn =
     Cell.t -> Parameter.t list -> Signal.t Port.t list -> Signal.t Port.t list Or_error.t
@@ -46,9 +45,9 @@ let ( ^~: ) a b = ~:(a ^: b)
 
 (* Convert cells written in terms of hardcaml interfaces into [Cell_implementaion.t]s *)
 module Implement_cell
-    (P : Hardcaml.Interface.S)
-    (I : Hardcaml.Interface.S)
-    (O : Hardcaml.Interface.S) : sig
+  (P : Hardcaml.Interface.S)
+  (I : Hardcaml.Interface.S)
+  (O : Hardcaml.Interface.S) : sig
   type t = string * (Cell.t -> Parameter.t P.t -> Signal.t I.t -> Signal.t O.t)
 
   val cell_implementation : t -> Cell_implementation.t
@@ -73,14 +72,14 @@ end = struct
     { Cell_implementation.name
     ; create_fn =
         (fun c p i ->
-           try Ok (to_list_o @@ f c (of_list_p p) (of_list_i i)) with
-           | e ->
-             Or_error.error_s
-               [%message
-                 "Failed to instantiation cell implementation"
-                   (name : string)
-                   (e : exn)
-                   (p : Parameter.t list)])
+          try Ok (to_list_o @@ f c (of_list_p p) (of_list_i i)) with
+          | e ->
+            Or_error.error_s
+              [%message
+                "Failed to instantiation cell implementation"
+                  (name : string)
+                  (e : exn)
+                  (p : Parameter.t list)])
     }
   ;;
 end
@@ -131,10 +130,10 @@ module Op1 = struct
   let reduce_xnor =
     ( "$reduce_xnor"
     , fun _ p i ->
-      let p = P.map ~f:pint p in
-      assert (width i.I.a = p.P.a_width);
-      let y = reduce ~f:( ^: ) (bits_msb i.I.a) in
-      O.{ y = uresize ~:y p.P.y_width } )
+        let p = P.map ~f:pint p in
+        assert (width i.I.a = p.P.a_width);
+        let y = reduce ~f:( ^: ) (bits_msb i.I.a) in
+        O.{ y = uresize ~:y p.P.y_width } )
   ;;
 
   let reduce_bool = "$reduce_bool", fr ( |: )
@@ -142,10 +141,10 @@ module Op1 = struct
   let logic_not =
     ( "$logic_not"
     , fun _ p i ->
-      let p = P.map ~f:pint p in
-      assert (width i.I.a = p.P.a_width);
-      let y = i.I.a ==:. 0 in
-      O.{ y = uresize y p.P.y_width } )
+        let p = P.map ~f:pint p in
+        assert (width i.I.a = p.P.a_width);
+        let y = i.I.a ==:. 0 in
+        O.{ y = uresize y p.P.y_width } )
   ;;
 
   let cells =
@@ -213,16 +212,16 @@ module Op2 = struct
   let mul =
     ( "$mul"
     , fun _ p i ->
-      let p = P.map ~f:pint p in
-      assert (width i.I.a = p.P.a_width);
-      assert (width i.I.b = p.P.b_width);
-      let is_signed = p.P.a_signed = 1 && p.P.b_signed = 1 in
-      let a = (res p) i.I.a p.P.y_width in
-      let b = (res p) i.I.b p.P.y_width in
-      let ( *: ) a b =
-        if is_signed then sresize (a *+ b) p.P.y_width else uresize (a *: b) p.P.y_width
-      in
-      O.{ y = a *: b } )
+        let p = P.map ~f:pint p in
+        assert (width i.I.a = p.P.a_width);
+        assert (width i.I.b = p.P.b_width);
+        let is_signed = p.P.a_signed = 1 && p.P.b_signed = 1 in
+        let a = (res p) i.I.a p.P.y_width in
+        let b = (res p) i.I.b p.P.y_width in
+        let ( *: ) a b =
+          if is_signed then sresize (a *+ b) p.P.y_width else uresize (a *: b) p.P.y_width
+        in
+        O.{ y = a *: b } )
   ;;
 
   let fs f _ p i =
@@ -254,22 +253,21 @@ module Op2 = struct
   let shift =
     ( "$shift"
     , fun _ p i ->
-      let p = P.map ~f:pint p in
-      assert (width i.I.a = p.P.a_width);
-      assert (width i.I.b = p.P.b_width);
-      let a = uresize i.I.a (max p.P.a_width p.P.y_width) in
-      let y =
-        if p.P.b_signed = 1
-        then mux2 (msb i.I.b) (log_shift sll a (negate i.I.b)) (log_shift srl a i.I.b)
-        else log_shift srl a i.I.b
-      in
-      O.{ y = uresize y p.P.y_width } )
+        let p = P.map ~f:pint p in
+        assert (width i.I.a = p.P.a_width);
+        assert (width i.I.b = p.P.b_width);
+        let a = uresize i.I.a (max p.P.a_width p.P.y_width) in
+        let y =
+          if p.P.b_signed = 1
+          then mux2 (msb i.I.b) (log_shift sll a (negate i.I.b)) (log_shift srl a i.I.b)
+          else log_shift srl a i.I.b
+        in
+        O.{ y = uresize y p.P.y_width } )
   ;;
 
   let shiftx =
     ( "$shiftx"
-      ,
-      fun _ p i ->
+    , fun _ p i ->
         let p = P.map ~f:pint p in
         assert (width i.I.a = p.P.a_width);
         assert (width i.I.b = p.P.b_width);
@@ -764,7 +762,7 @@ module Dffsr = struct
           concat_lsb
           @@ Array.to_list
           @@ Array.init p.P.width ~f:(fun j ->
-            dffsr (bit i.set j) (bit i.clr j) (bit i.d j))
+               dffsr (bit i.set j) (bit i.clr j) (bit i.d j))
       }
   ;;
 
@@ -1153,7 +1151,7 @@ let cells =
     ; Dffsr.cells
     ; Adff.cells
     ; Concat.cells
-    (*(Memwr.cells)
+      (*(Memwr.cells)
       (Memrd.cells) *)
     ; Mem.cells
     ]

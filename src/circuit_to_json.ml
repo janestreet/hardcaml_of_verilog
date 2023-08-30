@@ -48,10 +48,10 @@ let create_module ~debug circuit =
       (match Map.find !select_map (Signal.uid arg) with
        | Some v ->
          select_map
-         := Map.set
-              !select_map
-              ~key:(Signal.uid arg)
-              ~data:((signal_id.s_id, high, low) :: v)
+           := Map.set
+                !select_map
+                ~key:(Signal.uid arg)
+                ~data:((signal_id.s_id, high, low) :: v)
        | None -> ())
     | _ -> ());
   (* We create a map of signal_ids that when seen we want to replace the signal_id, this
@@ -291,19 +291,19 @@ let create_module ~debug circuit =
                   @ List.filter_map
                       instantiation.inst_outputs
                       ~f:(fun (n, (_width, o_lo)) ->
-                        (* Try match each output with a select based on its hi and lo. *)
-                        match List.find selects ~f:(fun (_id, _hi, lo) -> o_lo = lo) with
-                        | Some (signal_id, _, _) -> Some (n, [ bit_name_of_uid signal_id ])
-                        | None -> None)
+                      (* Try match each output with a select based on its hi and lo. *)
+                      match List.find selects ~f:(fun (_id, _hi, lo) -> o_lo = lo) with
+                      | Some (signal_id, _, _) -> Some (n, [ bit_name_of_uid signal_id ])
+                      | None -> None)
                   |> connections
               ; port_directions =
                   List.mapi instantiation.inst_inputs ~f:(fun _i (n, _s) -> n, Input)
                   @ List.filter_map
                       instantiation.inst_outputs
                       ~f:(fun (n, (_width, o_lo)) ->
-                        match List.find selects ~f:(fun (_id, _hi, lo) -> o_lo = lo) with
-                        | Some _ -> Some (n, Output)
-                        | None -> None)
+                      match List.find selects ~f:(fun (_id, _hi, lo) -> o_lo = lo) with
+                      | Some _ -> Some (n, Output)
+                      | None -> None)
                   |> port_dirns
               } )
       in

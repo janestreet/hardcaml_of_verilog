@@ -93,12 +93,12 @@ module Module = struct
   [@@deriving sexp, fields ~getters]
 
   let create
-        ?(blackbox = false)
-        ?(parameters = [])
-        ?(instantiates = [])
-        ~module_name
-        ~path
-        ()
+    ?(blackbox = false)
+    ?(parameters = [])
+    ?(instantiates = [])
+    ~module_name
+    ~path
+    ()
     =
     { module_name; path; instantiates; parameters; blackbox }
   ;;

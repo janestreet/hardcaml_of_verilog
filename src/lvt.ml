@@ -159,11 +159,11 @@ module Multiport_regs (C : Config) = struct
     let we1h = List.map ~f:(fun wr -> reg_we_enable ~we:wr.we ~wa:wr.wa) wr in
     Array.to_list
     @@ Array.init size ~f:(fun elt ->
-      let wed = List.map2_exn ~f:(fun we1h wr -> bit we1h elt, wr.d) we1h wr in
-      let we, d = pri wed in
-      (* last d with write enable set *)
-      let r = reg reg_spec ~enable:we d in
-      we, d, r)
+         let wed = List.map2_exn ~f:(fun we1h wr -> bit we1h elt, wr.d) we1h wr in
+         let we, d = pri wed in
+         (* last d with write enable set *)
+         let r = reg reg_spec ~enable:we d in
+         we, d, r)
   ;;
 
   (* n write, n read ports *)

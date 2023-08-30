@@ -14,8 +14,8 @@ module type Assoc_list = sig
 end
 
 module Assoc_list (V : sig
-    type t [@@deriving jsonaf, sexp_of]
-  end) : Assoc_list with type v := V.t
+  type t [@@deriving jsonaf, sexp_of]
+end) : Assoc_list with type v := V.t
 
 module Int_or_string : sig
   type t =

@@ -37,7 +37,7 @@ module Select = struct
       if Hardcaml.Signal.Uid.equal
            (Hardcaml.Signal.uid h.signal)
            (Hardcaml.Signal.uid top.signal)
-      && top.low = h.high + 1
+         && top.low = h.high + 1
       then { h with high = top.low } :: t
       else top :: h :: t
   ;;
@@ -87,8 +87,8 @@ module Module_inputs = struct
   ;;
 
   let module_input_ports
-        (circuit_input_map : Hardcaml.Signal.t Map.M(String).t)
-        (module_ports : Bus.t Port.t list)
+    (circuit_input_map : Hardcaml.Signal.t Map.M(String).t)
+    (module_ports : Bus.t Port.t list)
     =
     List.map module_ports ~f:(fun port ->
       match Map.find circuit_input_map port.name with
@@ -104,8 +104,8 @@ module Module_inputs = struct
   ;;
 
   let create
-        (circuit_inputs : Hardcaml.Signal.t Port.t list)
-        (module_ports : Bus.t Port.t list)
+    (circuit_inputs : Hardcaml.Signal.t Port.t list)
+    (module_ports : Bus.t Port.t list)
     : t Or_error.t
     =
     let%bind.Or_error circuit_input_map = circuit_input_map circuit_inputs in
@@ -129,10 +129,10 @@ end
 
 type t =
   { bit_to_select : Select.t Map.M(Int).t
-  (* Map net indices to a single bit [Select.t] of the corresponding signal (input or cell
+      (* Map net indices to a single bit [Select.t] of the corresponding signal (input or cell
      output). *)
   ; cell_port_to_wire : Hardcaml.Signal.t Map.M(Cell_port).t
-  (* Cell outputs indexed by port name and cell instantiation name *)
+      (* Cell outputs indexed by port name and cell instantiation name *)
   ; bus_names : Bus_names.t (* Netlist bus names for recoving signal naming. *)
   }
 

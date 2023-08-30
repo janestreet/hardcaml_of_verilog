@@ -20,8 +20,8 @@ module Make (I : Hardcaml.Interface.S) (O : Hardcaml.Interface.S) = struct
     let create_fn = Verilog_circuit.create_fn circuit in
     Ok
       (fun i ->
-         let inputs = inputs i in
-         let%bind.Or_error o = create_fn inputs in
-         outputs o)
+        let inputs = inputs i in
+        let%bind.Or_error o = create_fn inputs in
+        outputs o)
   ;;
 end

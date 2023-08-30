@@ -3,11 +3,11 @@ open Stdio
 open Printf
 
 module Rebuild_interfaces
-    (I : Hardcaml.Interface.S)
-    (O : Hardcaml.Interface.S) (X : sig
-                                  val verilog_design : Verilog_design.t
-                                  val loaded_design : Verilog_circuit.t
-                                end) =
+  (I : Hardcaml.Interface.S)
+  (O : Hardcaml.Interface.S) (X : sig
+    val verilog_design : Verilog_design.t
+    val loaded_design : Verilog_circuit.t
+  end) =
 struct
   let verilog_design = X.verilog_design
 
@@ -65,12 +65,12 @@ struct
 end
 
 let template
-      ~verilog_design
-      ~module_type_params
-      ~module_params
-      ~input_fields
-      ~output_fields
-      ~instantiated_params
+  ~verilog_design
+  ~module_type_params
+  ~module_params
+  ~input_fields
+  ~output_fields
+  ~instantiated_params
   =
   [%string
     {ocaml_module|open Base
