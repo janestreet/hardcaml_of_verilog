@@ -1,6 +1,6 @@
 (executables (names test)
  (libraries base core_unix.filename_unix hardcaml_of_verilog parsexp stdio)
- (preprocess (pps ppx_deriving_hardcaml ppx_jane)) (flags :standard -w -60))
+ (preprocess (pps ppx_hardcaml ppx_jane)) (flags :standard -w -60))
 
 (rule (targets simple_adder_8.ml)
  (deps simple_adder.v

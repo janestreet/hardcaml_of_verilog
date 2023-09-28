@@ -17,11 +17,11 @@ depends: [
   "hardcaml"
   "hardcaml_verify"
   "jsonaf"
-  "ppx_deriving_hardcaml"
+  "ppx_hardcaml"
   "ppx_jane"
   "ppx_jsonaf_conv"
   "stdio"
-  "dune"                  {>= "2.0.0"}
+  "dune"            {>= "2.0.0"}
 ]
 available: arch != "arm32" & arch != "x86_32"
 synopsis: "Convert Verilog to a Hardcaml design"
