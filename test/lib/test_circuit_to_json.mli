@@ -8,11 +8,11 @@ module I : sig
     ; a : 'a
     ; b : 'a
     }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 end
 
 module O : sig
-  type 'a t = { y : 'a } [@@deriving sexp_of, hardcaml]
+  type 'a t = { y : 'a } [@@deriving hardcaml]
 end
 
 val create : Signal.t I.t -> Signal.t O.t

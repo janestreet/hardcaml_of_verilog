@@ -3,11 +3,11 @@ open Hardcaml_of_verilog
 open Expect_test_helpers_core
 
 module I = struct
-  type 'a t = { a : 'a } [@@deriving sexp_of, hardcaml]
+  type 'a t = { a : 'a } [@@deriving hardcaml]
 end
 
 module O = struct
-  type 'a t = { b : 'a } [@@deriving sexp_of, hardcaml]
+  type 'a t = { b : 'a } [@@deriving hardcaml]
 end
 
 module Conv = With_interface.Make (I) (O)

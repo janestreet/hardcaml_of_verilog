@@ -91,15 +91,15 @@ module Op1 = struct
       ; a_width : 'a [@rtlname "A_WIDTH"]
       ; y_width : 'a [@rtlname "Y_WIDTH"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module I = struct
-    type 'a t = { a : 'a [@rtlname "A"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { a : 'a [@rtlname "A"] } [@@deriving hardcaml]
   end
 
   module O = struct
-    type 'a t = { y : 'a [@rtlname "Y"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { y : 'a [@rtlname "Y"] } [@@deriving hardcaml]
   end
 
   module W = Implement_cell (P) (I) (O)
@@ -174,7 +174,7 @@ module Op2 = struct
       ; b_width : 'a [@rtlname "B_WIDTH"]
       ; y_width : 'a [@rtlname "Y_WIDTH"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module I = struct
@@ -182,11 +182,11 @@ module Op2 = struct
       { a : 'a [@rtlname "A"]
       ; b : 'a [@rtlname "B"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module O = struct
-    type 'a t = { y : 'a [@rtlname "Y"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { y : 'a [@rtlname "Y"] } [@@deriving hardcaml]
   end
 
   module W = Implement_cell (P) (I) (O)
@@ -353,7 +353,7 @@ end
 
 module Fa = struct
   module P = struct
-    type 'a t = { width : 'a [@rtlname "WIDTH"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { width : 'a [@rtlname "WIDTH"] } [@@deriving hardcaml]
   end
 
   module I = struct
@@ -362,7 +362,7 @@ module Fa = struct
       ; b : 'a [@rtlname "B"]
       ; c : 'a [@rtlname "C"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module O = struct
@@ -370,7 +370,7 @@ module Fa = struct
       { x : 'a [@rtlname "X"]
       ; y : 'a [@rtlname "Y"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module W = Implement_cell (P) (I) (O)
@@ -394,7 +394,7 @@ end
 
 module Lcu = struct
   module P = struct
-    type 'a t = { width : 'a [@rtlname "WIDTH"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { width : 'a [@rtlname "WIDTH"] } [@@deriving hardcaml]
   end
 
   module I = struct
@@ -403,11 +403,11 @@ module Lcu = struct
       ; g : 'a [@rtlname "G"]
       ; ci : 'a [@rtlname "CI"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module O = struct
-    type 'a t = { co : 'a [@rtlname "CO"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { co : 'a [@rtlname "CO"] } [@@deriving hardcaml]
   end
 
   module W = Implement_cell (P) (I) (O)
@@ -444,15 +444,15 @@ module Slice = struct
       ; a_width : 'a [@rtlname "A_WIDTH"]
       ; y_width : 'a [@rtlname "Y_WIDTH"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module I = struct
-    type 'a t = { a : 'a [@rtlname "A"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { a : 'a [@rtlname "A"] } [@@deriving hardcaml]
   end
 
   module O = struct
-    type 'a t = { y : 'a [@rtlname "Y"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { y : 'a [@rtlname "Y"] } [@@deriving hardcaml]
   end
 
   module W = Implement_cell (P) (I) (O)
@@ -475,7 +475,7 @@ module Concat = struct
       { a_width : 'a [@rtlname "A_WIDTH"]
       ; b_width : 'a [@rtlname "B_WIDTH"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module I = struct
@@ -483,11 +483,11 @@ module Concat = struct
       { a : 'a [@rtlname "A"]
       ; b : 'a [@rtlname "B"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module O = struct
-    type 'a t = { y : 'a [@rtlname "Y"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { y : 'a [@rtlname "Y"] } [@@deriving hardcaml]
   end
 
   module W = Implement_cell (P) (I) (O)
@@ -507,7 +507,7 @@ end
 
 module Mux = struct
   module P = struct
-    type 'a t = { width : 'a [@rtlname "WIDTH"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { width : 'a [@rtlname "WIDTH"] } [@@deriving hardcaml]
   end
 
   module I = struct
@@ -516,11 +516,11 @@ module Mux = struct
       ; b : 'a [@rtlname "B"]
       ; s : 'a [@rtlname "S"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module O = struct
-    type 'a t = { y : 'a [@rtlname "Y"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { y : 'a [@rtlname "Y"] } [@@deriving hardcaml]
   end
 
   module W = Implement_cell (P) (I) (O)
@@ -545,7 +545,7 @@ module Pmux = struct
       { width : 'a [@rtlname "WIDTH"]
       ; s_width : 'a [@rtlname "S_WIDTH"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module I = struct
@@ -554,11 +554,11 @@ module Pmux = struct
       ; b : 'a [@rtlname "B"]
       ; s : 'a [@rtlname "S"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module O = struct
-    type 'a t = { y : 'a [@rtlname "Y"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { y : 'a [@rtlname "Y"] } [@@deriving hardcaml]
   end
 
   module W = Implement_cell (P) (I) (O)
@@ -594,15 +594,15 @@ module Lut = struct
       { width : 'a [@rtlname "WIDTH"]
       ; lut : 'a [@rtlname "LUT"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module I = struct
-    type 'a t = { a : 'a [@rtlname "A"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { a : 'a [@rtlname "A"] } [@@deriving hardcaml]
   end
 
   module O = struct
-    type 'a t = { y : 'a [@rtlname "Y"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { y : 'a [@rtlname "Y"] } [@@deriving hardcaml]
   end
 
   module W = Implement_cell (P) (I) (O)
@@ -639,7 +639,7 @@ module Dff = struct
       { width : 'a [@rtlname "WIDTH"]
       ; clk_polarity : 'a [@rtlname "CLK_POLARITY"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module I = struct
@@ -647,11 +647,11 @@ module Dff = struct
       { clk : 'a [@rtlname "CLK"]
       ; d : 'a [@rtlname "D"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module O = struct
-    type 'a t = { q : 'a [@rtlname "Q"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { q : 'a [@rtlname "Q"] } [@@deriving hardcaml]
   end
 
   module W = Implement_cell (P) (I) (O)
@@ -677,7 +677,7 @@ module Dffe = struct
       ; clk_polarity : 'a [@rtlname "CLK_POLARITY"]
       ; en_polarity : 'a [@rtlname "EN_POLARITY"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module I = struct
@@ -686,11 +686,11 @@ module Dffe = struct
       ; en : 'a [@rtlname "EN"]
       ; d : 'a [@rtlname "D"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module O = struct
-    type 'a t = { q : 'a [@rtlname "Q"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { q : 'a [@rtlname "Q"] } [@@deriving hardcaml]
   end
 
   module W = Implement_cell (P) (I) (O)
@@ -718,7 +718,7 @@ module Dffsr = struct
       ; set_polarity : 'a [@rtlname "SET_POLARITY"]
       ; clr_polarity : 'a [@rtlname "CLR_POLARITY"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module I = struct
@@ -728,11 +728,11 @@ module Dffsr = struct
       ; clr : 'a [@rtlname "CLR"]
       ; d : 'a [@rtlname "D"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module O = struct
-    type 'a t = { q : 'a [@rtlname "Q"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { q : 'a [@rtlname "Q"] } [@@deriving hardcaml]
   end
 
   module W = Implement_cell (P) (I) (O)
@@ -780,7 +780,7 @@ module Adff = struct
       ; arst_polarity : 'a [@rtlname "ARST_POLARITY"]
       ; arst_value : 'a [@rtlname "ARST_VALUE"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module I = struct
@@ -789,11 +789,11 @@ module Adff = struct
       ; arst : 'a [@rtlname "ARST"]
       ; d : 'a [@rtlname "D"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module O = struct
-    type 'a t = { q : 'a [@rtlname "Q"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { q : 'a [@rtlname "Q"] } [@@deriving hardcaml]
   end
 
   module W = Implement_cell (P) (I) (O)
@@ -846,7 +846,7 @@ module _ = struct
       ; abits : 'a [@rtlname "ABITS"]
       ; memid : 'a [@rtlname "MEMID"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module I = struct
@@ -856,7 +856,7 @@ module _ = struct
       ; data : 'a [@rtlname "DATA"]
       ; addr : 'a [@rtlname "ADDR"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module O = Hardcaml.Interface.Empty
@@ -914,7 +914,7 @@ module _ = struct
       ; abits : 'a [@rtlname "ABITS"]
       ; memid : 'a [@rtlname "MEMID"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module I = struct
@@ -923,11 +923,11 @@ module _ = struct
       ; clk : 'a [@rtlname "CLK"]
       ; addr : 'a [@rtlname "ADDR"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module O = struct
-    type 'a t = { data : 'a [@rtlname "DATA"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { data : 'a [@rtlname "DATA"] } [@@deriving hardcaml]
   end
 
   module W = Implement_cell (P) (I) (O)
@@ -988,7 +988,7 @@ module Mem = struct
       ; wr_clk_polarity : 'a [@rtlname "WR_CLK_POLARITY"]
       ; wr_ports : 'a [@rtlname "WR_PORTS"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module I = struct
@@ -1001,11 +1001,11 @@ module Mem = struct
       ; wr_data : 'a [@rtlname "WR_DATA"]
       ; wr_en : 'a [@rtlname "WR_EN"]
       }
-    [@@deriving sexp_of, hardcaml]
+    [@@deriving hardcaml]
   end
 
   module O = struct
-    type 'a t = { rd_data : 'a [@rtlname "RD_DATA"] } [@@deriving sexp_of, hardcaml]
+    type 'a t = { rd_data : 'a [@rtlname "RD_DATA"] } [@@deriving hardcaml]
   end
 
   module W = Implement_cell (P) (I) (O)

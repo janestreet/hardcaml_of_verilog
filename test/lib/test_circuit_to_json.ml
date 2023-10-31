@@ -10,11 +10,11 @@ module I = struct
     ; a : 'a [@bits 1]
     ; b : 'a [@bits 1]
     }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 end
 
 module O = struct
-  type 'a t = { y : 'a [@bits 1] } [@@deriving sexp_of, hardcaml]
+  type 'a t = { y : 'a [@bits 1] } [@@deriving hardcaml]
 end
 
 let create (i : _ I.t) =

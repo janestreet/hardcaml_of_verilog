@@ -14,7 +14,7 @@ module Wr : sig
     ; wa : 'a
     ; d : 'a
     }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 end
 
 module Rd : sig
@@ -22,7 +22,7 @@ module Rd : sig
     { re : 'a
     ; ra : 'a
     }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 end
 
 type mode =

@@ -73,7 +73,7 @@ module Wr = struct
     ; wa : 'a
     ; d : 'a
     }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 end
 
 module Rd = struct
@@ -81,7 +81,7 @@ module Rd = struct
     { re : 'a
     ; ra : 'a
     }
-  [@@deriving sexp_of, hardcaml]
+  [@@deriving hardcaml]
 end
 
 (* fallthrough = wbr (write before read) *)
