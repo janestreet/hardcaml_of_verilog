@@ -1,5 +1,4 @@
 (*
-
    Multiport memories for Hardcaml
    ===============================
 
@@ -53,8 +52,6 @@
 
    Of course we also need 2*4 256 x 32 memories (with 1 read and 1 write
    port each) to store the data.
-
-
 *)
 
 open! Base
