@@ -11,7 +11,7 @@ let port_name signal =
 ;;
 
 let signal_op_to_string op =
-  match (op : Signal.signal_op) with
+  match (op : Signal.Type.signal_op) with
   | Signal_add -> "$add"
   | Signal_sub -> "$sub"
   | Signal_mulu -> "$mulu"

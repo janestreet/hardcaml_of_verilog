@@ -1,42 +1,51 @@
-(executables (names test)
+(executables
+ (modes byte exe)
+ (names test)
  (libraries base core_unix.filename_unix hardcaml_of_verilog parsexp stdio)
- (preprocess (pps ppx_hardcaml ppx_jane)) (flags :standard -w -60))
+ (preprocess
+  (pps ppx_hardcaml ppx_jane))
+ (flags :standard -w -60))
 
-(rule (targets simple_adder_8.ml)
+(rule
+ (targets simple_adder_8.ml)
  (deps simple_adder.v
-  %{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe
-  simple_adder_8.sexp)
+   %{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe
+   simple_adder_8.sexp)
  (action
   (bash
-   "%{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe synthesize ocaml-module -i simple_adder_8.sexp -o simple_adder_8.ml")))
+    "%{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe synthesize ocaml-module -i simple_adder_8.sexp -o simple_adder_8.ml")))
 
-(rule (targets simple_adder_16.ml)
+(rule
+ (targets simple_adder_16.ml)
  (deps simple_adder.v
-  %{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe
-  simple_adder_16.sexp)
+   %{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe
+   simple_adder_16.sexp)
  (action
   (bash
-   "%{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe synthesize ocaml-module -i simple_adder_16.sexp -o simple_adder_16.ml")))
+    "%{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe synthesize ocaml-module -i simple_adder_16.sexp -o simple_adder_16.ml")))
 
-(rule (targets simple_adder.ml)
+(rule
+ (targets simple_adder.ml)
  (deps simple_adder.v
-  %{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe
-  simple_adder.sexp)
+   %{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe
+   simple_adder.sexp)
  (action
   (bash
-   "%{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe synthesize ocaml-module -i simple_adder.sexp -o simple_adder.ml")))
+    "%{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe synthesize ocaml-module -i simple_adder.sexp -o simple_adder.ml")))
 
-(rule (targets carry_save_adder.ml)
+(rule
+ (targets carry_save_adder.ml)
  (deps simple_adder.v full_adder.v
-  %{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe
-  carry_save_adder.sexp carry_save_adder.json)
+   %{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe
+   carry_save_adder.sexp carry_save_adder.json)
  (action
   (bash
-   "%{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe synthesize ocaml-module -i carry_save_adder.sexp -o carry_save_adder.ml")))
+    "%{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe synthesize ocaml-module -i carry_save_adder.sexp -o carry_save_adder.ml")))
 
-(rule (targets carry_save_adder.json)
+(rule
+ (targets carry_save_adder.json)
  (deps carry_save_adder.sexp simple_adder.v full_adder.v
-  %{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe)
+   %{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe)
  (action
   (bash
-   "%{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe synthesize json -i carry_save_adder.sexp -o carry_save_adder.json")))
+    "%{workspace_root}/lib/hardcaml/of_verilog/bin/convert.exe synthesize json -i carry_save_adder.sexp -o carry_save_adder.json")))

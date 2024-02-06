@@ -1,3 +1,6 @@
-(library (name hardcaml_port_verilog) (public_name hardcaml_of_verilog.port)
+(library
+ (name hardcaml_port_verilog)
+ (public_name hardcaml_of_verilog.port)
  (libraries core hardcaml hardcaml_of_verilog hardcaml_verify)
- (preprocess (pps ppx_jane)))
+ (preprocess
+  (pps ppx_jane)))

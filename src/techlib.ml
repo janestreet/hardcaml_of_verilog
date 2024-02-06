@@ -1098,7 +1098,7 @@ module Mem = struct
       else i.I.wr_clk.(w)
     in
     let spec clk clk_polarity =
-      { Signal.reg_clock = clk
+      { Reg_spec.reg_clock = clk
       ; reg_clock_edge = (if clk_polarity then Rising else Falling)
       ; reg_reset = empty
       ; reg_reset_edge = Rising

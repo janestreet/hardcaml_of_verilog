@@ -1,3 +1,6 @@
-(executables (names convert)
+(executables
+ (modes byte exe)
+ (names convert)
  (libraries core core_unix.command_unix hardcaml_of_verilog)
- (preprocess (pps ppx_jane)))
+ (preprocess
+  (pps ppx_jane)))
