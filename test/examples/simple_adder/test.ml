@@ -6,13 +6,13 @@ module Default = struct
 end
 
 let simple_adder_8 () =
-  let module Inst = Simple_adder_8.From_verilog () (Default) in
+  let module Inst = Simple_adder_8.From_verilog (struct end) (Default) in
   let module Circ = Hardcaml.Circuit.With_interface (Inst.I) (Inst.O) in
   Circ.create_exn ~name:Simple_adder_8.name Inst.create |> Hardcaml.Rtl.print Verilog
 ;;
 
 let simple_adder_16 () =
-  let module Inst = Simple_adder_16.From_verilog () (Default) in
+  let module Inst = Simple_adder_16.From_verilog (struct end) (Default) in
   let module Circ = Hardcaml.Circuit.With_interface (Inst.I) (Inst.O) in
   Circ.create_exn ~name:Simple_adder_16.name Inst.create |> Hardcaml.Rtl.print Verilog
 ;;
@@ -31,7 +31,7 @@ let simple_adder () =
 
 let carry_save_adder () =
   let module Inst =
-    Carry_save_adder.From_verilog ()
+    Carry_save_adder.From_verilog (struct end)
       (struct
         let verbose = false
 
