@@ -75,5 +75,6 @@ let%expect_test "basic yosys json" =
                    ((name B) (value ())))))))))
             (netnames
              (((name fudge) (value ((hide_name 0) (bits ((Index 200)))))))))))
-         ((name bar) (value ((ports ()) (cells ()) (netnames ()))))))))) |}]
+         ((name bar) (value ((ports ()) (cells ()) (netnames ())))))))))
+    |}]
 ;;

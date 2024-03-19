@@ -157,5 +157,6 @@ let%expect_test "simple adder to json" =
           "netnames": {}
         }
       }
-    } |}]
+    }
+    |}]
 ;;

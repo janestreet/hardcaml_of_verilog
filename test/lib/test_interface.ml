@@ -26,6 +26,5 @@ let%expect_test "load simple design" =
     let f = Or_error.ok_exn f in
     let o = f { a = Hardcaml.Signal.wire 3 } |> Or_error.ok_exn in
     print_s [%message (o : _ O.t)]);
-  [%expect {|
-    (o ((b _))) |}]
+  [%expect {| (o ((b _))) |}]
 ;;

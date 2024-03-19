@@ -31,7 +31,8 @@ let%expect_test "map/iter" =
     bar
     brumble
     fudge
-    foo |}];
+    foo
+    |}];
   let modules =
     M.map modules ~f:(fun m ->
       M.create
@@ -53,12 +54,14 @@ let%expect_test "map/iter" =
           (((module_name BRUMBLE) (path vlog/brumble.v) (instantiates ())
             (parameters ()) (blackbox false))))
          (parameters ()) (blackbox false))))
-      (parameters ()) (blackbox false))) |}];
+      (parameters ()) (blackbox false)))
+    |}];
   let modules = M.flat_map modules ~f:(fun m -> M.module_name m, M.path m) in
   print_s [%message (modules : (string * string) list)];
   [%expect
     {|
     (modules
      ((FOO vlog/foo.v) (BAR vlog/bar.v) (FUDGE vlog/fudge.v)
-      (BRUMBLE vlog/brumble.v))) |}]
+      (BRUMBLE vlog/brumble.v)))
+    |}]
 ;;

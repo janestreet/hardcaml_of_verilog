@@ -22,7 +22,8 @@ let%expect_test "yosys script" =
     clean
     opt -mux_undef
     clean
-    write_json out.json |}]
+    write_json out.json
+    |}]
 ;;
 
 let%expect_test "custom passes" =
@@ -42,5 +43,6 @@ let%expect_test "custom passes" =
     chparam -set A 1 -set B "popcorn" foo
     hierarchy -top foo
     clean
-    write_json out.json |}]
+    write_json out.json
+    |}]
 ;;

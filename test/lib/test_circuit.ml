@@ -30,7 +30,8 @@ module top (input a, output b); endmodule
   [%expect
     {|
     ("to_netlist ()" (Ok (top)))
-    ("to_circuit ()" (Error ("Failed to find net in bus map" (i 3)))) |}]
+    ("to_circuit ()" (Error ("Failed to find net in bus map" (i 3))))
+    |}]
 ;;
 
 let%expect_test "simple assignment" =
@@ -54,7 +55,8 @@ module top (input a, output b); assign b = a; endmodule
         assign b = a_0;
 
     endmodule
-    ("to_circuit ()" (Ok ())) |}]
+    ("to_circuit ()" (Ok ()))
+    |}]
 ;;
 
 let%expect_test "simple xor of inputs" =
@@ -87,7 +89,8 @@ endmodule
         assign b = b_0;
 
     endmodule
-    ("to_circuit ()" (Ok ())) |}]
+    ("to_circuit ()" (Ok ()))
+    |}]
 ;;
 
 let%expect_test "unused input bits" =
@@ -129,7 +132,8 @@ endmodule
         assign b = b_0;
 
     endmodule
-    ("to_circuit ()" (Ok ())) |}]
+    ("to_circuit ()" (Ok ()))
+    |}]
 ;;
 
 let%expect_test "instantiate module" =
@@ -172,7 +176,8 @@ endmodule
         assign c = c_0;
 
     endmodule
-    ("to_circuit ()" (Ok ())) |}];
+    ("to_circuit ()" (Ok ()))
+    |}];
   (* keep hierarchy *)
   of_verilog ~passes:[ Proc; Opt { mux_undef = false }; Clean ] verilog;
   [%expect
@@ -204,5 +209,6 @@ endmodule
         assign c = c_0;
 
     endmodule
-    ("to_circuit ()" (Ok ())) |}]
+    ("to_circuit ()" (Ok ()))
+    |}]
 ;;
