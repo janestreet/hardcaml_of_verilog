@@ -49,7 +49,7 @@ module Select = struct
     try
       let selects =
         List.map selects ~f:(fun select ->
-          Hardcaml.Signal.select select.signal select.high select.low)
+          select.signal.Hardcaml.Signal.:[select.high, select.low])
       in
       Ok (Hardcaml.Signal.concat_msb selects)
     with

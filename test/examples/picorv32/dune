@@ -1,7 +1,7 @@
 (executables
  (modes byte exe)
  (names test)
- (libraries hardcaml_of_verilog parsexp)
+ (libraries hardcaml hardcaml_of_verilog parsexp)
  (preprocess
   (pps ppx_hardcaml ppx_jane)))
 

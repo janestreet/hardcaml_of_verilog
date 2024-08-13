@@ -33,8 +33,8 @@ module type Assoc_list = sig
 end
 
 module Assoc_list (V : sig
-  type t [@@deriving jsonaf, sexp_of]
-end) =
+    type t [@@deriving jsonaf, sexp_of]
+  end) =
 struct
   type t =
     { name : string

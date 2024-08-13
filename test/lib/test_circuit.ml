@@ -24,7 +24,9 @@ let of_verilog ?verbose ?(netlist = false) ?passes verilog =
 ;;
 
 let%expect_test "no module output driver" =
-  of_verilog ~netlist:true {|
+  of_verilog
+    ~netlist:true
+    {|
 module top (input a, output b); endmodule
 |};
   [%expect
@@ -35,7 +37,8 @@ module top (input a, output b); endmodule
 ;;
 
 let%expect_test "simple assignment" =
-  of_verilog {|
+  of_verilog
+    {|
 module top (input a, output b); assign b = a; endmodule
 |};
   [%expect

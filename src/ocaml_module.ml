@@ -3,11 +3,12 @@ open Stdio
 open Printf
 
 module Rebuild_interfaces
-  (I : Hardcaml.Interface.S)
-  (O : Hardcaml.Interface.S) (X : sig
-    val verilog_design : Verilog_design.t
-    val loaded_design : Verilog_circuit.t
-  end) =
+    (I : Hardcaml.Interface.S)
+    (O : Hardcaml.Interface.S)
+    (X : sig
+       val verilog_design : Verilog_design.t
+       val loaded_design : Verilog_circuit.t
+     end) =
 struct
   let verilog_design = X.verilog_design
 

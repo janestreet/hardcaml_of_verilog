@@ -27,7 +27,8 @@ let top =
 let%expect_test "map/iter" =
   let modules = V.top top in
   M.iter modules ~f:(fun m -> Out_channel.print_endline (M.module_name m));
-  [%expect {|
+  [%expect
+    {|
     bar
     brumble
     fudge

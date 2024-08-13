@@ -3,9 +3,9 @@ open Hardcaml
 open Hardcaml_of_verilog
 
 module Make (X : sig
-  val verilog_design : Verilog_design.t
-  val hardcaml_circuit : Circuit.t
-end) =
+    val verilog_design : Verilog_design.t
+    val hardcaml_circuit : Circuit.t
+  end) =
 struct
   module Verilog () = struct
     let netlist = Netlist.create X.verilog_design |> Or_error.ok_exn
@@ -35,8 +35,7 @@ struct
           Hardcaml_verify.Sec.find_instantiation_inputs_proposition t ~name
           |> Option.value_exn)
         @ List.map register_propositions ~f:(fun name ->
-            Hardcaml_verify.Sec.find_register_inputs_proposition t ~name
-            |> Option.value_exn)
+          Hardcaml_verify.Sec.find_register_inputs_proposition t ~name |> Option.value_exn)
       in
       match propositions with
       | [] -> Hardcaml_verify.Sec.circuits_equivalent t

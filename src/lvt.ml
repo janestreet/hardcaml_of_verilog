@@ -147,7 +147,7 @@ module Multiport_regs (C : Config) = struct
   ;;
 
   let reg_we_enable ~we ~wa =
-    select (binary_to_onehot wa) (size - 1) 0 &: mux2 we (ones size) (zero size)
+    (binary_to_onehot wa).:[size - 1, 0] &: mux2 we (ones size) (zero size)
   ;;
 
   let memory_nwr_array ~(wr : wr_port array) =
@@ -156,11 +156,11 @@ module Multiport_regs (C : Config) = struct
     let we1h = List.map ~f:(fun wr -> reg_we_enable ~we:wr.we ~wa:wr.wa) wr in
     Array.to_list
     @@ Array.init size ~f:(fun elt ->
-         let wed = List.map2_exn ~f:(fun we1h wr -> bit we1h elt, wr.d) we1h wr in
-         let we, d = pri wed in
-         (* last d with write enable set *)
-         let r = reg reg_spec ~enable:we d in
-         we, d, r)
+      let wed = List.map2_exn ~f:(fun we1h wr -> we1h.:(elt), wr.d) we1h wr in
+      let we, d = pri wed in
+      (* last d with write enable set *)
+      let r = reg reg_spec ~enable:we d in
+      we, d, r)
   ;;
 
   (* n write, n read ports *)
@@ -314,8 +314,8 @@ module Make_wren (C : Config) = struct
                { wr with
                  wr =
                    { wr.wr with
-                     Wr.we = select wr.wr.Wr.we n n
-                   ; d = select wr.wr.Wr.d (n + bits - 1) n
+                     Wr.we = wr.wr.Wr.we.:[n, n]
+                   ; d = wr.wr.Wr.d.:[n + bits - 1, n]
                    }
                }
              in

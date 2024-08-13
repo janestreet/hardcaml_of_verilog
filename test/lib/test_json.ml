@@ -1,11 +1,13 @@
 open Core
 open Hardcaml_of_verilog
 
-let header_json = {|
+let header_json =
+  {|
   { "creator" : "yosys",
     "modules" : {}
   }
 |}
+;;
 
 let basic_json =
   {|

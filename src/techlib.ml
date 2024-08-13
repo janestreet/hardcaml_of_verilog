@@ -45,9 +45,9 @@ let ( ^~: ) a b = ~:(a ^: b)
 
 (* Convert cells written in terms of hardcaml interfaces into [Cell_implementaion.t]s *)
 module Implement_cell
-  (P : Hardcaml.Interface.S)
-  (I : Hardcaml.Interface.S)
-  (O : Hardcaml.Interface.S) : sig
+    (P : Hardcaml.Interface.S)
+    (I : Hardcaml.Interface.S)
+    (O : Hardcaml.Interface.S) : sig
   type t = string * (Cell.t -> Parameter.t P.t -> Signal.t I.t -> Signal.t O.t)
 
   val cell_implementation : t -> Cell_implementation.t
@@ -109,7 +109,7 @@ module Op1 = struct
   let f1 f _ p i =
     let p = P.map ~f:pint p in
     assert (width i.I.a = p.P.a_width);
-    let a = (res p) i.I.a p.P.y_width in
+    let a = (res p) i.I.a ~width:p.P.y_width in
     O.{ y = f a }
   ;;
 
@@ -120,7 +120,7 @@ module Op1 = struct
   let fr f _ p i =
     let p = P.map ~f:pint p in
     assert (width i.I.a = p.P.a_width);
-    O.{ y = uresize (reduce ~f (bits_msb i.I.a)) p.P.y_width }
+    O.{ y = uresize (reduce ~f (bits_msb i.I.a)) ~width:p.P.y_width }
   ;;
 
   let reduce_or = "$reduce_or", fr ( |: )
@@ -133,7 +133,7 @@ module Op1 = struct
         let p = P.map ~f:pint p in
         assert (width i.I.a = p.P.a_width);
         let y = reduce ~f:( ^: ) (bits_msb i.I.a) in
-        O.{ y = uresize ~:y p.P.y_width } )
+        O.{ y = uresize ~:y ~width:p.P.y_width } )
   ;;
 
   let reduce_bool = "$reduce_bool", fr ( |: )
@@ -144,7 +144,7 @@ module Op1 = struct
         let p = P.map ~f:pint p in
         assert (width i.I.a = p.P.a_width);
         let y = i.I.a ==:. 0 in
-        O.{ y = uresize y p.P.y_width } )
+        O.{ y = uresize y ~width:p.P.y_width } )
   ;;
 
   let cells =
@@ -197,9 +197,9 @@ module Op2 = struct
     let p = P.map ~f:pint p in
     assert (width i.I.a = p.P.a_width);
     assert (width i.I.b = p.P.b_width);
-    let a = (res p) i.I.a p.P.y_width in
-    let b = (res p) i.I.b p.P.y_width in
-    O.{ y = uresize (f a b) p.P.y_width }
+    let a = (res p) i.I.a ~width:p.P.y_width in
+    let b = (res p) i.I.b ~width:p.P.y_width in
+    O.{ y = uresize (f a b) ~width:p.P.y_width }
   ;;
 
   let and_ = "$and", f2 ( &: )
@@ -216,10 +216,12 @@ module Op2 = struct
         assert (width i.I.a = p.P.a_width);
         assert (width i.I.b = p.P.b_width);
         let is_signed = p.P.a_signed = 1 && p.P.b_signed = 1 in
-        let a = (res p) i.I.a p.P.y_width in
-        let b = (res p) i.I.b p.P.y_width in
+        let a = (res p) i.I.a ~width:p.P.y_width in
+        let b = (res p) i.I.b ~width:p.P.y_width in
         let ( *: ) a b =
-          if is_signed then sresize (a *+ b) p.P.y_width else uresize (a *: b) p.P.y_width
+          if is_signed
+          then sresize (a *+ b) ~width:p.P.y_width
+          else uresize (a *: b) ~width:p.P.y_width
         in
         O.{ y = a *: b } )
   ;;
@@ -229,26 +231,30 @@ module Op2 = struct
     assert (width i.I.a = p.P.a_width);
     assert (width i.I.b = p.P.b_width);
     let a =
-      (if p.P.a_signed = 1 then sresize else uresize) i.I.a (max p.P.y_width p.P.a_width)
+      (if p.P.a_signed = 1 then sresize else uresize)
+        i.I.a
+        ~width:(max p.P.y_width p.P.a_width)
     in
-    O.{ y = uresize (f p.P.a_signed a i.I.b) p.P.y_width }
+    O.{ y = uresize (f p.P.a_signed a i.I.b) ~width:p.P.y_width }
   ;;
 
-  let shl = "$shl", fs (fun _ a b -> log_shift sll a b)
-  let shr = "$shr", fs (fun _ a b -> log_shift srl a b)
+  let shl = "$shl", fs (fun _ a b -> log_shift ~f:sll a ~by:b)
+  let shr = "$shr", fs (fun _ a b -> log_shift ~f:srl a ~by:b)
 
   let fss f _ p i =
     let p = P.map ~f:pint p in
     assert (width i.I.a = p.P.a_width);
     assert (width i.I.b = p.P.b_width);
     let a =
-      (if p.P.a_signed = 1 then sresize else uresize) i.I.a (max p.P.a_width p.P.y_width)
+      (if p.P.a_signed = 1 then sresize else uresize)
+        i.I.a
+        ~width:(max p.P.a_width p.P.y_width)
     in
-    O.{ y = uresize (f p.P.a_signed a i.I.b) p.P.y_width }
+    O.{ y = uresize (f p.P.a_signed a i.I.b) ~width:p.P.y_width }
   ;;
 
-  let sshl = "$sshl", fss (fun _ a b -> log_shift sll a b)
-  let sshr = "$sshr", fss (fun s a b -> log_shift (if s = 1 then sra else srl) a b)
+  let sshl = "$sshl", fss (fun _ a b -> log_shift ~f:sll a ~by:b)
+  let sshr = "$sshr", fss (fun s a b -> log_shift ~f:(if s = 1 then sra else srl) a ~by:b)
 
   let shift =
     ( "$shift"
@@ -256,13 +262,17 @@ module Op2 = struct
         let p = P.map ~f:pint p in
         assert (width i.I.a = p.P.a_width);
         assert (width i.I.b = p.P.b_width);
-        let a = uresize i.I.a (max p.P.a_width p.P.y_width) in
+        let a = uresize i.I.a ~width:(max p.P.a_width p.P.y_width) in
         let y =
           if p.P.b_signed = 1
-          then mux2 (msb i.I.b) (log_shift sll a (negate i.I.b)) (log_shift srl a i.I.b)
-          else log_shift srl a i.I.b
+          then
+            mux2
+              (msb i.I.b)
+              (log_shift ~f:sll a ~by:(negate i.I.b))
+              (log_shift ~f:srl a ~by:i.I.b)
+          else log_shift ~f:srl a ~by:i.I.b
         in
-        O.{ y = uresize y p.P.y_width } )
+        O.{ y = uresize y ~width:p.P.y_width } )
   ;;
 
   let shiftx =
@@ -271,13 +281,17 @@ module Op2 = struct
         let p = P.map ~f:pint p in
         assert (width i.I.a = p.P.a_width);
         assert (width i.I.b = p.P.b_width);
-        let a = uresize i.I.a (max p.P.a_width p.P.y_width) in
+        let a = uresize i.I.a ~width:(max p.P.a_width p.P.y_width) in
         let y =
           if p.P.b_signed = 1
-          then mux2 (msb i.I.b) (log_shift sll a (negate i.I.b)) (log_shift srl a i.I.b)
-          else log_shift srl a i.I.b
+          then
+            mux2
+              (msb i.I.b)
+              (log_shift ~f:sll a ~by:(negate i.I.b))
+              (log_shift ~f:srl a ~by:i.I.b)
+          else log_shift ~f:srl a ~by:i.I.b
         in
-        O.{ y = uresize y p.P.y_width } )
+        O.{ y = uresize y ~width:p.P.y_width } )
   ;;
 
   (* let macc = ... *)
@@ -289,7 +303,7 @@ module Op2 = struct
     let p = P.map ~f:pint p in
     assert (width i.I.a = p.P.a_width);
     assert (width i.I.b = p.P.b_width);
-    O.{ y = uresize (f i.I.a i.I.b) p.P.y_width }
+    O.{ y = uresize (f i.I.a i.I.b) ~width:p.P.y_width }
   ;;
 
   let logic_and = "$logic_and", fl (fun a b -> a <>:. 0 &: (b <>:. 0))
@@ -300,13 +314,13 @@ module Op2 = struct
     assert (width i.I.a = p.P.a_width);
     assert (width i.I.b = p.P.b_width);
     let w = max p.P.a_width p.P.b_width in
-    let a = (res p) i.I.a w in
-    let b = (res p) i.I.b w in
+    let a = (res p) i.I.a ~width:w in
+    let b = (res p) i.I.b ~width:w in
     O.
       { y =
           uresize
             ((if p.P.a_signed = 1 && p.P.b_signed = 1 then fs else fu) a b)
-            p.P.y_width
+            ~width:p.P.y_width
       }
   ;;
 
@@ -460,7 +474,7 @@ module Slice = struct
   let slice _ p i =
     let p = P.map ~f:pint p in
     assert (width i.I.a = p.P.a_width);
-    O.{ y = uresize (srl i.I.a p.P.offset) p.P.y_width }
+    O.{ y = uresize (srl i.I.a ~by:p.P.offset) ~width:p.P.y_width }
   ;;
 
   let slice = "$slice", slice
@@ -572,7 +586,7 @@ module Pmux = struct
       match s with
       | [] -> a
       | s :: t ->
-        let b' = select b (((i + 1) * p.P.width) - 1) (i * p.P.width) in
+        let b' = b.:[((i + 1) * p.P.width) - 1, i * p.P.width] in
         mux2 s b' (pmux t a b (i + 1))
     in
     O.{ y = pmux (bits_lsb i.I.s) i.I.a i.I.b 0 }
@@ -611,7 +625,9 @@ module Lut = struct
     let p = P.map ~f:pint p in
     assert (width i.I.a = p.P.width);
     let lut = of_int ~width:(1 lsl p.P.width) p.P.lut in
-    let y = mux i.I.a (Array.to_list @@ Array.init (1 lsl p.P.width) ~f:(bit lut)) in
+    let y =
+      mux i.I.a (Array.to_list @@ Array.init (1 lsl p.P.width) ~f:(fun pos -> lut.:(pos)))
+    in
     O.{ y }
   ;;
 
@@ -761,8 +777,7 @@ module Dffsr = struct
       { q =
           concat_lsb
           @@ Array.to_list
-          @@ Array.init p.P.width ~f:(fun j ->
-               dffsr (bit i.set j) (bit i.clr j) (bit i.d j))
+          @@ Array.init p.P.width ~f:(fun j -> dffsr i.set.:(j) i.clr.:(j) i.d.:(j))
       }
   ;;
 
@@ -1049,7 +1064,7 @@ module Mem = struct
       assert (width x = ports * bwidth);
       Array.init ports ~f:(fun j ->
         let l = j * bwidth in
-        select x (l + bwidth - 1) l)
+        x.:[l + bwidth - 1, l])
     in
     I.(map2 ~f:to_array i (zip ports bwidth))
   ;;

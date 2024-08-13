@@ -22,7 +22,7 @@ let%expect_test "load simple design" =
       Verilog_design.(create ~top:(Module.create ~module_name:"testme" ~path:tmp ()) ())
   in
   Core_unix.unlink tmp;
-  require_does_not_raise [%here] (fun () ->
+  require_does_not_raise (fun () ->
     let f = Or_error.ok_exn f in
     let o = f { a = Hardcaml.Signal.wire 3 } |> Or_error.ok_exn in
     print_s [%message (o : _ O.t)]);

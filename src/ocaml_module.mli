@@ -5,11 +5,12 @@
 open Base
 
 module Rebuild_interfaces
-  (I : Hardcaml.Interface.S)
-  (O : Hardcaml.Interface.S) (X : sig
-    val verilog_design : Verilog_design.t
-    val loaded_design : Verilog_circuit.t
-  end) : sig
+    (I : Hardcaml.Interface.S)
+    (O : Hardcaml.Interface.S)
+    (X : sig
+       val verilog_design : Verilog_design.t
+       val loaded_design : Verilog_circuit.t
+     end) : sig
   val verilog_design : Verilog_design.t
 
   module I : Hardcaml.Interface.S with type 'a t = 'a I.t
