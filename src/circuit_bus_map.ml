@@ -76,7 +76,7 @@ module Module_inputs = struct
       circuit_inputs
       ~init:(Ok (Map.empty (module String)))
       ~f:(fun map input ->
-        let%bind.Or_error map = map in
+        let%bind.Or_error map in
         match Map.add map ~key:input.name ~data:input.value with
         | `Ok map -> Ok map
         | `Duplicate ->
@@ -208,7 +208,7 @@ let add_cell_output t (cell : Cell.t) (port : Bus.t Port.t) =
 ;;
 
 let find_and_concat_bus_bit map selects (bit : Bit.t) =
-  let%bind.Or_error selects = selects in
+  let%bind.Or_error selects in
   match bit with
   | Vdd -> Ok (Select.vdd :: selects)
   | Gnd -> Ok (Select.gnd :: selects)
@@ -261,7 +261,7 @@ let create (module_ : Netlist.Module.t) ~circuit_inputs =
   let bus_map = empty module_.bus_names in
   match
     List.fold inputs ~init:(Ok bus_map) ~f:(fun map port ->
-      let%bind.Or_error map = map in
+      let%bind.Or_error map in
       add_module_input map port.value.input_signal { port with value = port.value.bus })
   with
   | Error e -> Or_error.error_s [%message "adding module inputs" (e : Error.t)]
@@ -269,7 +269,7 @@ let create (module_ : Netlist.Module.t) ~circuit_inputs =
     (match
        List.fold module_.cells ~init:(Ok bus_map) ~f:(fun map cell ->
          List.fold cell.outputs ~init:map ~f:(fun map output ->
-           let%bind.Or_error map = map in
+           let%bind.Or_error map in
            add_cell_output map cell output))
      with
      | Error e -> Or_error.error_s [%message "adding cell outputs" (e : Error.t)]

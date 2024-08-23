@@ -79,7 +79,7 @@ module Cell = struct
         cell.value.port_directions
         ~init:(Ok (Map.empty (module String)))
         ~f:(fun map dirn ->
-          let%bind.Or_error map = map in
+          let%bind.Or_error map in
           match Map.add map ~key:dirn.name ~data:dirn.value with
           | `Ok map -> Ok map
           | `Duplicate ->

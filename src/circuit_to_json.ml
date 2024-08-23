@@ -29,8 +29,8 @@ let create_module ~debug circuit =
   Signal_graph.iter (Circuit.signal_graph circuit) ~f:(fun signal ->
     match signal with
     | Reg { register; _ } ->
-      ignore_set := Set.add !ignore_set (Signal.uid register.reg_clear_value);
-      ignore_set := Set.add !ignore_set (Signal.uid register.reg_reset_value)
+      ignore_set := Set.add !ignore_set (Signal.uid register.clear_to);
+      ignore_set := Set.add !ignore_set (Signal.uid register.reset_to)
     | _ -> ());
   (* Create a map of signal uids which will be outputs of instances, with a list of
      selects driven by that uid. This will be used to correctly assign signals to outputs
@@ -112,10 +112,10 @@ let create_module ~debug circuit =
                 module_name = "$our_dff"
               ; connections =
                   [ "D", [ bit_name_of_signal d ]
-                  ; "CLR", [ bit_name_of_signal register.reg_clear ]
-                  ; "RST", [ bit_name_of_signal register.reg_reset ]
-                  ; "CLK", [ bit_name_of_signal register.reg_clock ]
-                  ; "CE", [ bit_name_of_signal register.reg_enable ]
+                  ; "CLR", [ bit_name_of_signal register.spec.clear ]
+                  ; "RST", [ bit_name_of_signal register.spec.reset ]
+                  ; "CLK", [ bit_name_of_signal register.spec.clock ]
+                  ; "CE", [ bit_name_of_signal register.enable ]
                   ; "Q", [ bit_name_of_uid signal_id.s_id ]
                   ]
                   |> connections

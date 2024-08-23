@@ -643,8 +643,8 @@ end
 (* module Assume = struct .. end *)
 (* module Equiv = struct .. end *)
 
-let reg_spec ?clock_edge ?reset ?reset_edge ?reset_to ~clock () =
-  Reg_spec.override (Reg_spec.create ~clock ()) ?clock_edge ?reset ?reset_edge ?reset_to
+let reg_spec ?clock_edge ?reset ?reset_edge ~clock () =
+  Reg_spec.create ~clock ?clock_edge ?reset ?reset_edge ()
 ;;
 
 (* module Sr = struct end *)
@@ -677,7 +677,7 @@ module Dff = struct
     let p = P.map ~f:pint p in
     assert (width i.d = p.P.width);
     let clock_edge : Edge.t = if p.P.clk_polarity = 1 then Rising else Falling in
-    O.{ q = reg (reg_spec ~clock:i.clk ~clock_edge ()) ~enable:empty i.d }
+    O.{ q = reg (reg_spec ~clock:i.clk ~clock_edge ()) i.d }
   ;;
 
   let dff = "$dff", dff
@@ -764,13 +764,8 @@ module Dffsr = struct
       let set = if p.P.set_polarity = 1 then set else ~:set in
       let clr = if p.P.clr_polarity = 1 then clr else ~:clr in
       reg
-        (reg_spec
-           ~clock:i.clk
-           ~clock_edge
-           ~reset:(set |: clr)
-           ~reset_to:(mux2 clr gnd vdd)
-           ())
-        ~enable:empty
+        (reg_spec ~clock:i.clk ~clock_edge ~reset:(set |: clr) ())
+        ~reset_to:(mux2 clr gnd vdd)
         d
     in
     O.
@@ -830,8 +825,8 @@ module Adff = struct
     O.
       { q =
           reg
-            (reg_spec ~clock:i.clk ~clock_edge ~reset:i.arst ~reset_edge ~reset_to:rv ())
-            ~enable:empty
+            (reg_spec ~clock:i.clk ~clock_edge ~reset:i.arst ~reset_edge ())
+            ~reset_to:rv
             i.d
       }
   ;;
@@ -1113,16 +1108,7 @@ module Mem = struct
       else i.I.wr_clk.(w)
     in
     let spec clk clk_polarity =
-      { Reg_spec.reg_clock = clk
-      ; reg_clock_edge = (if clk_polarity then Rising else Falling)
-      ; reg_reset = empty
-      ; reg_reset_edge = Rising
-      ; reg_reset_value = empty
-      ; reg_clear = empty
-      ; reg_clear_level = High
-      ; reg_clear_value = empty
-      ; reg_enable = empty
-      }
+      Reg_spec.create ~clock:clk ~clock_edge:(if clk_polarity then Rising else Falling) ()
     in
     let rd_port r =
       { Lvt.reg_spec = spec i.I.rd_clk.(r) (bit p.P.rd_clk_polarity r)
