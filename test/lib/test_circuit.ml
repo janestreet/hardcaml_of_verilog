@@ -197,7 +197,7 @@ endmodule
 
         wire a_0;
         wire b_0;
-        wire _9;
+        wire _8;
         wire _5;
         wire c_0;
         assign a_0 = a;
@@ -206,8 +206,8 @@ endmodule
             the_foo
             ( .b(b_0),
               .a(a_0),
-              .c(_9) );
-        assign _5 = _9;
+              .c(_8) );
+        assign _5 = _8;
         assign c_0 = _5;
         assign c = c_0;
 
