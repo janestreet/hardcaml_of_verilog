@@ -28,9 +28,11 @@ let create_module ~debug circuit =
   let ignore_set = ref (Set.empty (module Signal.Uid)) in
   Signal_graph.iter (Circuit.signal_graph circuit) ~f:(fun signal ->
     match signal with
-    | Reg { register; _ } ->
-      ignore_set := Set.add !ignore_set (Signal.uid register.clear_to);
-      ignore_set := Set.add !ignore_set (Signal.uid register.reset_to)
+    | Reg { register = { reset; clear; _ }; _ } ->
+      Option.iter clear ~f:(fun { clear_to; _ } ->
+        ignore_set := Set.add !ignore_set (Signal.uid clear_to));
+      Option.iter reset ~f:(fun { reset_to; _ } ->
+        ignore_set := Set.add !ignore_set (Signal.uid reset_to))
     | _ -> ());
   (* Create a map of signal uids which will be outputs of instances, with a list of
      selects driven by that uid. This will be used to correctly assign signals to outputs
@@ -59,13 +61,10 @@ let create_module ~debug circuit =
   let driver_map = ref (Map.empty (module Signal.Uid)) in
   Signal_graph.iter (Circuit.signal_graph circuit) ~f:(fun signal ->
     match signal with
-    | Wire { signal_id; driver } ->
-      if Signal.is_empty !driver
-      then ()
-      else (
-        match Map.add !driver_map ~key:signal_id.s_id ~data:(Signal.uid !driver) with
-        | `Ok new_map -> driver_map := new_map
-        | _ -> ())
+    | Wire { signal_id; driver = Some driver } ->
+      (match Map.add !driver_map ~key:signal_id.s_id ~data:(Signal.uid driver) with
+       | `Ok new_map -> driver_map := new_map
+       | _ -> ())
     | _ -> ());
   if debug
   then (
@@ -80,6 +79,10 @@ let create_module ~debug circuit =
   let bit_name_of_uid uid = Bit.Index (uid |> get_driver |> Signal.Uid.to_int) in
   let bit_name_of_signal signal =
     Bit.Index (Signal.uid signal |> get_driver |> Signal.Uid.to_int)
+  in
+  let bit_name_of_signal_opt = function
+    | None -> bit_name_of_signal Signal.empty
+    | Some signal -> bit_name_of_signal signal
   in
   let create_cells circuit =
     (* let default_attributes : attributes =
@@ -112,10 +115,16 @@ let create_module ~debug circuit =
                 module_name = "$our_dff"
               ; connections =
                   [ "D", [ bit_name_of_signal d ]
-                  ; "CLR", [ bit_name_of_signal register.spec.clear ]
-                  ; "RST", [ bit_name_of_signal register.spec.reset ]
-                  ; "CLK", [ bit_name_of_signal register.spec.clock ]
-                  ; "CE", [ bit_name_of_signal register.enable ]
+                  ; ( "CLR"
+                    , [ bit_name_of_signal_opt
+                          (Option.map register.clear ~f:(fun clear -> clear.clear))
+                      ] )
+                  ; ( "RST"
+                    , [ bit_name_of_signal_opt
+                          (Option.map register.reset ~f:(fun reset -> reset.reset))
+                      ] )
+                  ; "CLK", [ bit_name_of_signal register.clock.clock ]
+                  ; "CE", [ bit_name_of_signal_opt register.enable ]
                   ; "Q", [ bit_name_of_uid signal_id.s_id ]
                   ]
                   |> connections
@@ -268,6 +277,29 @@ let create_module ~debug circuit =
                   List.mapi cases ~f:(fun i _ -> "A" ^ Int.to_string i, Input)
                   @ [ "S", Input ]
                   @ [ "Y", Output ]
+                  |> port_dirns
+              } )
+        | Cases { signal_id; select; cases; default } ->
+          Some
+            ( "$cases" ^ Signal.Uid.to_string signal_id.s_id
+            , { default_cell with
+                module_name = "$our_cases"
+              ; connections =
+                  (List.mapi cases ~f:(fun i (match_with, value) ->
+                     [ "M" ^ Int.to_string i, [ bit_name_of_signal match_with ]
+                     ; "V" ^ Int.to_string i, [ bit_name_of_signal value ]
+                     ])
+                   |> List.concat)
+                  @ [ "S", [ bit_name_of_signal select ]
+                    ; "D", [ bit_name_of_signal default ]
+                    ; "Y", [ bit_name_of_uid signal_id.s_id ]
+                    ]
+                  |> connections
+              ; port_directions =
+                  (List.mapi cases ~f:(fun i _ ->
+                     [ "M" ^ Int.to_string i, Input; "V" ^ Int.to_string i, Input ])
+                   |> List.concat)
+                  @ [ "S", Input; "D", Input; "Y", Output ]
                   |> port_dirns
               } )
         | Inst { signal_id; instantiation; _ } ->
