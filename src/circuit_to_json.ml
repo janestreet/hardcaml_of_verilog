@@ -279,6 +279,29 @@ let create_module ~debug circuit =
                   @ [ "Y", Output ]
                   |> port_dirns
               } )
+        | Cases { signal_id; select; cases; default } ->
+          Some
+            ( "$cases" ^ Signal.Uid.to_string signal_id.s_id
+            , { default_cell with
+                module_name = "$our_cases"
+              ; connections =
+                  (List.mapi cases ~f:(fun i (match_with, value) ->
+                     [ "M" ^ Int.to_string i, [ bit_name_of_signal match_with ]
+                     ; "V" ^ Int.to_string i, [ bit_name_of_signal value ]
+                     ])
+                   |> List.concat)
+                  @ [ "S", [ bit_name_of_signal select ]
+                    ; "D", [ bit_name_of_signal default ]
+                    ; "Y", [ bit_name_of_uid signal_id.s_id ]
+                    ]
+                  |> connections
+              ; port_directions =
+                  (List.mapi cases ~f:(fun i _ ->
+                     [ "M" ^ Int.to_string i, Input; "V" ^ Int.to_string i, Input ])
+                   |> List.concat)
+                  @ [ "S", Input; "D", Input; "Y", Output ]
+                  |> port_dirns
+              } )
         | Inst { signal_id; instantiation; _ } ->
           (* Get the list of selects this instance drives. *)
           let selects = Map.find_exn !select_map signal_id.s_id in
