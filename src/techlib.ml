@@ -25,7 +25,7 @@ let pstr = function
 ;;
 
 let pconst w = function
-  | { Parameter.name = _; value = Int i } -> Signal.of_int ~width:w i
+  | { Parameter.name = _; value = Int i } -> Signal.of_int_trunc ~width:w i
   | { Parameter.name = _; value = String s } ->
     Signal.of_string (Int.to_string w ^ "'b" ^ s)
   | parameter -> raise_s [%message "bad const value" (parameter : Parameter.t)]
@@ -34,7 +34,6 @@ let pconst w = function
 let find_exn (ports : _ Port.t list) name =
   List.find ~f:(fun p -> String.equal p.name name) ports
   |> Option.value_exn
-       ~here:[%here]
        ~error:
          (Error.create_s
             [%message "Cannot find port" (name : string) (ports : _ Port.t list)])
@@ -624,7 +623,7 @@ module Lut = struct
   let lut _ p i =
     let p = P.map ~f:pint p in
     assert (width i.I.a = p.P.width);
-    let lut = of_int ~width:(1 lsl p.P.width) p.P.lut in
+    let lut = of_int_trunc ~width:(1 lsl p.P.width) p.P.lut in
     let y =
       mux i.I.a (Array.to_list @@ Array.init (1 lsl p.P.width) ~f:(fun pos -> lut.:(pos)))
     in
@@ -845,8 +844,7 @@ end
 (* module meminit = struct ... end *)
 (* module mem = struct ... end *)
 
-(* must use 'memory -dff' *)
-module _ = struct
+module (* memwr node (for use with memory -dff) - not currently used *) _ = struct
   module P = struct
     type 'a t =
       { priority : 'a [@rtlname "PRIORITY"]
@@ -914,7 +912,7 @@ module _ = struct
   let _cells = [ memwr ] |> List.map ~f:W.cell_implementation
 end
 
-module _ = struct
+module (* memrd node (for use with memory -dff) - not currently used *) _ = struct
   module P = struct
     type 'a t =
       { transparent : 'a [@rtlname "TRANSPARENT"]

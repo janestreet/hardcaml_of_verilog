@@ -25,7 +25,7 @@ let signal_op_to_string op =
 
 let create_module ~debug circuit =
   (* Create a set of signals we aren't rendering, so we should ignore them. *)
-  let ignore_set = ref (Set.empty (module Signal.Uid)) in
+  let ignore_set = ref (Set.empty (module Signal.Type.Uid)) in
   Signal_graph.iter (Circuit.signal_graph circuit) ~f:(fun signal ->
     match signal with
     | Reg { register = { reset; clear; _ }; _ } ->
@@ -37,7 +37,7 @@ let create_module ~debug circuit =
   (* Create a map of signal uids which will be outputs of instances, with a list of
      selects driven by that uid. This will be used to correctly assign signals to outputs
      of instances. *)
-  let select_map = ref (Map.empty (module Signal.Uid)) in
+  let select_map = ref (Map.empty (module Signal.Type.Uid)) in
   Signal_graph.iter (Circuit.signal_graph circuit) ~f:(fun signal ->
     match signal with
     | Inst { signal_id; _ } ->
@@ -58,7 +58,7 @@ let create_module ~debug circuit =
     | _ -> ());
   (* We create a map of signal_ids that when seen we want to replace the signal_id, this
      is used when dealing with wires. *)
-  let driver_map = ref (Map.empty (module Signal.Uid)) in
+  let driver_map = ref (Map.empty (module Signal.Type.Uid)) in
   Signal_graph.iter (Circuit.signal_graph circuit) ~f:(fun signal ->
     match signal with
     | Wire { signal_id; driver = Some driver } ->
@@ -68,17 +68,19 @@ let create_module ~debug circuit =
     | _ -> ());
   if debug
   then (
-    print_s [%message (!ignore_set : Set.M(Signal.Uid).t)];
-    print_s [%message (!driver_map : Signal.Uid.t Map.M(Signal.Uid).t)];
-    print_s [%message (!select_map : (Signal.Uid.t * int * int) list Map.M(Signal.Uid).t)]);
+    print_s [%message (!ignore_set : Set.M(Signal.Type.Uid).t)];
+    print_s [%message (!driver_map : Signal.Type.Uid.t Map.M(Signal.Type.Uid).t)];
+    print_s
+      [%message
+        (!select_map : (Signal.Type.Uid.t * int * int) list Map.M(Signal.Type.Uid).t)]);
   let rec get_driver s_id =
     match Map.find !driver_map s_id with
     | Some v -> get_driver v
     | None -> s_id
   in
-  let bit_name_of_uid uid = Bit.Index (uid |> get_driver |> Signal.Uid.to_int) in
+  let bit_name_of_uid uid = Bit.Index (uid |> get_driver |> Signal.Type.Uid.to_int) in
   let bit_name_of_signal signal =
-    Bit.Index (Signal.uid signal |> get_driver |> Signal.Uid.to_int)
+    Bit.Index (Signal.uid signal |> get_driver |> Signal.Type.Uid.to_int)
   in
   let bit_name_of_signal_opt = function
     | None -> bit_name_of_signal Signal.empty
@@ -110,7 +112,7 @@ let create_module ~debug circuit =
         match signal with
         | Reg { d; signal_id; register } ->
           Some
-            ( "$procdff$" ^ Signal.Uid.to_string signal_id.s_id
+            ( "$procdff$" ^ Signal.Type.Uid.to_string signal_id.s_id
             , { default_cell with
                 module_name = "$our_dff"
               ; connections =
@@ -140,7 +142,7 @@ let create_module ~debug circuit =
               } )
         | Cat { signal_id; args } ->
           Some
-            ( "$mygate" ^ Signal.Uid.to_string signal_id.s_id
+            ( "$mygate" ^ Signal.Type.Uid.to_string signal_id.s_id
             , { default_cell with
                 module_name = "$cat"
               ; connections =
@@ -152,18 +154,16 @@ let create_module ~debug circuit =
               } )
         | Empty -> None
         | Const { signal_id; constant } ->
-          if Set.exists !ignore_set ~f:(Signal.Uid.equal signal_id.s_id)
+          if Set.exists !ignore_set ~f:(Signal.Type.Uid.equal signal_id.s_id)
           then None
           else (
             let name =
               "$"
-              ^ (if Bits.is_vdd constant
-                 then "vdd"
-                 else if Bits.is_gnd constant
-                 then "gnd"
-                 else "const " ^ Int.Hex.to_string (Bits.to_int constant))
+              ^ (match Bits.width constant with
+                 | 1 -> if Bits.to_bool constant then "vdd" else "gnd"
+                 | _ -> "const " ^ Int.Hex.to_string (Bits.to_int_trunc constant))
               ^ "_"
-              ^ Signal.Uid.to_string signal_id.s_id
+              ^ Signal.Type.Uid.to_string signal_id.s_id
             in
             Some
               ( name
@@ -174,7 +174,7 @@ let create_module ~debug circuit =
                 } ))
         | Not { arg; signal_id } ->
           Some
-            ( "$not" ^ Signal.Uid.to_string signal_id.s_id
+            ( "$not" ^ Signal.Type.Uid.to_string signal_id.s_id
             , { default_cell with
                 module_name = "$inv"
               ; connections =
@@ -192,7 +192,7 @@ let create_module ~debug circuit =
              Some
                (let select_name =
                   "$select"
-                  ^ Signal.Uid.to_string signal_id.s_id
+                  ^ Signal.Type.Uid.to_string signal_id.s_id
                   ^ "["
                   ^ Int.to_string high
                   ^ ":"
@@ -212,7 +212,7 @@ let create_module ~debug circuit =
            | _ -> None)
         | Multiport_mem { signal_id; write_ports; _ } ->
           Some
-            ( "$memory" ^ Signal.Uid.to_string signal_id.s_id
+            ( "$memory" ^ Signal.Type.Uid.to_string signal_id.s_id
             , { default_cell with
                 module_name = "$multiportmem"
               ; connections =
@@ -243,7 +243,7 @@ let create_module ~debug circuit =
               } )
         | Mem_read_port { signal_id; _ } ->
           Some
-            ( "$mem_read_port" ^ Signal.Uid.to_string signal_id.s_id
+            ( "$mem_read_port" ^ Signal.Type.Uid.to_string signal_id.s_id
             , { default_cell with
                 module_name = "$memreadport"
               ; connections = [ "A", [ bit_name_of_uid signal_id.s_id ] ] |> connections
@@ -251,7 +251,7 @@ let create_module ~debug circuit =
               } )
         | Op2 { signal_id; op; arg_a; arg_b } ->
           Some
-            ( "$gate" ^ Signal.Uid.to_string signal_id.s_id
+            ( "$gate" ^ Signal.Type.Uid.to_string signal_id.s_id
             , { default_cell with
                 module_name = signal_op_to_string op
               ; connections =
@@ -264,7 +264,7 @@ let create_module ~debug circuit =
               } )
         | Mux { signal_id; select; cases } ->
           Some
-            ( "$mux" ^ Signal.Uid.to_string signal_id.s_id
+            ( "$mux" ^ Signal.Type.Uid.to_string signal_id.s_id
             , { default_cell with
                 module_name = "$our_mux"
               ; connections =
@@ -281,7 +281,7 @@ let create_module ~debug circuit =
               } )
         | Cases { signal_id; select; cases; default } ->
           Some
-            ( "$cases" ^ Signal.Uid.to_string signal_id.s_id
+            ( "$cases" ^ Signal.Type.Uid.to_string signal_id.s_id
             , { default_cell with
                 module_name = "$our_cases"
               ; connections =
@@ -306,7 +306,7 @@ let create_module ~debug circuit =
           (* Get the list of selects this instance drives. *)
           let selects = Map.find_exn !select_map signal_id.s_id in
           Some
-            ( "$mygate" ^ Signal.Uid.to_string signal_id.s_id
+            ( "$mygate" ^ Signal.Type.Uid.to_string signal_id.s_id
             , { default_cell with
                 module_name = "$inst_" ^ instantiation.inst_instance
               ; connections =

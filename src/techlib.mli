@@ -13,7 +13,7 @@ module Cell_implementation : sig
     }
 end
 
-(** Names of black boxes in the techlib.  These are cells we haven't yet implemented. *)
+(** Names of black boxes in the techlib. These are cells we haven't yet implemented. *)
 val blackboxes : string list
 
 (** List of cells in the techlib *)

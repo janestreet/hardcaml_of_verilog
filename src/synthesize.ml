@@ -94,7 +94,9 @@ let write_tmp_yosys_script ?passes verilog_design ~json_file =
 let run_yosys ?(verbose = false) args =
   let verbose = if verbose then [] else [ "2>/dev/null"; ">/dev/null" ] in
   let command =
-    String.concat ~sep:" " (List.concat [ [ Config.env; Config.yosys ]; args; verbose ])
+    String.concat
+      ~sep:" "
+      (List.concat [ [ Hardcaml.Tools_config.yosys ]; args; verbose ])
   in
   match Unix.system command with
   | WEXITED 0 -> Ok ()

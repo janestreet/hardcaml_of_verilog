@@ -43,7 +43,7 @@ let instantiate_cell_not_in_techlib (bus_map : Circuit_bus_map.t) (cell : Cell.t
   in
   (* Attach cell outputs to their wires *)
   List.iter outputs ~f:(fun { name; value = signal } ->
-    Hardcaml.Signal.( <== ) signal (Map.find_exn inst name));
+    Hardcaml.Signal.( <-- ) signal (Map.find_exn inst name));
   Ok ()
 ;;
 
@@ -65,7 +65,7 @@ let assign_cell_outputs
   let%bind.Or_error () =
     List.map implementation_outputs ~f:(fun implementation_output ->
       let%bind.Or_error cell_output = find implementation_output.name in
-      Hardcaml.Signal.( <== ) cell_output.value implementation_output.value;
+      Hardcaml.Signal.( <-- ) cell_output.value implementation_output.value;
       Ok ())
     |> Or_error.all_unit
   in
