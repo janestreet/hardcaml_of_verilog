@@ -4,9 +4,3 @@
  (libraries base hardcaml core_unix.filename_unix jsonaf stdio unix)
  (preprocess
   (pps ppx_jane ppx_jsonaf_conv ppx_hardcaml)))
-
-(rule
- (targets config.ml)
- (deps)
- (action
-  (bash "cat <<EOF > config.ml\nlet yosys = \"yosys\"\nlet env = \"\"\nEOF")))

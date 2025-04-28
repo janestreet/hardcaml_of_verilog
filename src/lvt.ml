@@ -244,7 +244,9 @@ module Make (C : Config) = struct
       else (
         let lvt_wr =
           Array.init nwr ~f:(fun i ->
-            { (wr.(i)) with wr = { wr.(i).wr with d = of_int ~width:Lvt_cfg.dbits i } })
+            { (wr.(i)) with
+              wr = { wr.(i).wr with d = of_int_trunc ~width:Lvt_cfg.dbits i }
+            })
         in
         Lvt.memory ~wr:lvt_wr ~rd)
     in

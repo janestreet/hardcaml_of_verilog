@@ -34,7 +34,7 @@ module Select = struct
     | h :: t ->
       (* If the next bit is the next consequetive bit from the same signal, then merge
          into a larger select *)
-      if Hardcaml.Signal.Uid.equal
+      if Hardcaml.Signal.Type.Uid.equal
            (Hardcaml.Signal.uid h.signal)
            (Hardcaml.Signal.uid top.signal)
          && top.low = h.high + 1

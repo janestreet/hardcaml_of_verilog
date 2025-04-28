@@ -1,4 +1,5 @@
 open Core
+open Stdio
 open Hardcaml_of_verilog
 
 let in_chan =
@@ -92,7 +93,10 @@ let synthesize_to_circuit ~file_in =
 ;;
 
 let write_rtl ~file_out ~rtl (circuit : Hardcaml.Circuit.t) =
-  Hardcaml.Rtl.output ~output_mode:(To_channel file_out) rtl circuit
+  Hardcaml.Rtl.create rtl [ circuit ]
+  |> Hardcaml.Rtl.top_levels_only
+  |> Rope.to_string
+  |> Out_channel.output_string file_out
 ;;
 
 let command_synthesize_to_yosys_netlist =

@@ -71,7 +71,7 @@ module Module : sig
   val iter : t -> f:(t -> unit) -> unit
   val map : t -> f:(t -> t) -> t
 
-  (** Convert to a list.  The "top" of the design is at the head of the list. *)
+  (** Convert to a list. The "top" of the design is at the head of the list. *)
   val flat_map : t -> f:(t -> 'a) -> 'a list
 end
 
