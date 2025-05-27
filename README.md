@@ -1,8 +1,8 @@
-"Hardcaml of Verilog"
-=====================
+Verilog to Hardcaml conversion
+==============================
 
-Use the opensource verilog synthesis tool [Yosys](https://github.com/YosysHQ/yosys)
-to read a synthesizable verilog design, convert it to a structural netlist
+Use the opensource Verilog synthesis tool [Yosys](https://github.com/YosysHQ/yosys)
+to read a synthesizable Verilog design, convert it to a structural netlist
 and save it in a JSON file.
 
 This library can read the JSON netlist file and reconstruct the design in Hardcaml.
@@ -75,7 +75,7 @@ limitations are known
 1. only supports 1 write clock domain
 2. read-before-write and write-before-read behaviour only really makes sense if the read and
    write clocks are in the same clock domain.
-3. Memory initialisation is not supported.
+3. Memory initialization is not supported.
 
 In yosys use;
 
@@ -108,7 +108,7 @@ yosys> write_json design.json      # write json netlist
 
 #### Hardcaml usage
 
-Convert a single verilog file.
+Convert a single Verilog file.
 
 ```ocaml
 let convert_verilog ?verbose ?passes verilog_file =

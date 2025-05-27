@@ -43,7 +43,7 @@ let instantiate_cell_not_in_techlib (bus_map : Circuit_bus_map.t) (cell : Cell.t
   in
   (* Attach cell outputs to their wires *)
   List.iter outputs ~f:(fun { name; value = signal } ->
-    Hardcaml.Signal.( <-- ) signal (Map.find_exn inst name));
+    Hardcaml.Signal.( <-- ) signal (Hardcaml.Instantiation.output inst name));
   Ok ()
 ;;
 

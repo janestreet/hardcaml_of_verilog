@@ -905,7 +905,7 @@ module (* memwr node (for use with memory -dff) - not currently used *) _ = stru
         ~inputs:I.(to_list @@ zip port_names i)
         ~outputs:O.(to_list @@ zip port_names (_get_output_width p))
     in
-    O.(map ~f:(fun n -> Map.find_exn inst n) port_names)
+    O.(map ~f:(fun n -> Instantiation.output inst n) port_names)
   ;;
 
   let memwr = "$memwr", memwr
@@ -971,7 +971,7 @@ module (* memrd node (for use with memory -dff) - not currently used *) _ = stru
         ~inputs:I.(to_list @@ zip port_names i)
         ~outputs:O.(to_list @@ zip port_names (_get_output_width p))
     in
-    O.(map ~f:(fun n -> Map.find_exn inst n) port_names)
+    O.(map ~f:(fun n -> Instantiation.output inst n) port_names)
   ;;
 
   let memrd = "$memrd", memrd
