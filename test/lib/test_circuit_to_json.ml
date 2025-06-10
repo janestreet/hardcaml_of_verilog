@@ -1,7 +1,7 @@
 open! Core
 open Hardcaml
-open Hardcaml_of_verilog
 open Signal
+open Hardcaml_of_verilog
 
 module I = struct
   type 'a t =
