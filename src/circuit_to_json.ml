@@ -308,23 +308,27 @@ let create_module ~debug circuit =
           Some
             ( "$mygate" ^ Signal.Type.Uid.to_string signal_id.s_id
             , { default_cell with
-                module_name = "$inst_" ^ instantiation.inst_instance
+                module_name = "$inst_" ^ instantiation.instance_label
               ; connections =
-                  List.mapi instantiation.inst_inputs ~f:(fun _i (n, s) ->
-                    n, [ bit_name_of_signal s ])
+                  List.mapi
+                    instantiation.inputs
+                    ~f:(fun _i { name = n; input_signal = s } ->
+                      n, [ bit_name_of_signal s ])
                   @ List.filter_map
-                      instantiation.inst_outputs
-                      ~f:(fun (n, (_width, o_lo)) ->
+                      instantiation.outputs
+                      ~f:(fun { name = n; output_width = _; output_low_index = o_lo } ->
                         (* Try match each output with a select based on its hi and lo. *)
                         match List.find selects ~f:(fun (_id, _hi, lo) -> o_lo = lo) with
                         | Some (signal_id, _, _) -> Some (n, [ bit_name_of_uid signal_id ])
                         | None -> None)
                   |> connections
               ; port_directions =
-                  List.mapi instantiation.inst_inputs ~f:(fun _i (n, _s) -> n, Input)
+                  List.mapi
+                    instantiation.inputs
+                    ~f:(fun _i { name = n; input_signal = _ } -> n, Input)
                   @ List.filter_map
-                      instantiation.inst_outputs
-                      ~f:(fun (n, (_width, o_lo)) ->
+                      instantiation.outputs
+                      ~f:(fun { name = n; output_width = _; output_low_index = o_lo } ->
                         match List.find selects ~f:(fun (_id, _hi, lo) -> o_lo = lo) with
                         | Some _ -> Some (n, Output)
                         | None -> None)

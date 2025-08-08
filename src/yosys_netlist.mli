@@ -28,7 +28,7 @@ module Direction : sig
   type t =
     | Input
     | Output
-  [@@deriving equal, jsonaf, sexp_of]
+  [@@deriving equal ~localize, jsonaf, sexp_of]
 end
 
 module Bit : sig
@@ -37,7 +37,7 @@ module Bit : sig
     | Gnd
     | X
     | Index of int
-  [@@deriving compare, jsonaf, sexp_of]
+  [@@deriving compare ~localize, jsonaf, sexp_of]
 end
 
 module Port : sig

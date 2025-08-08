@@ -6,7 +6,7 @@ type t =
   | Memory of { nomap : bool }
   | Opt of { mux_undef : bool }
   | Clean
-[@@deriving sexp_of, equal]
+[@@deriving sexp_of, equal ~localize]
 
 let to_string = function
   | Proc -> "proc"

@@ -97,13 +97,13 @@ end
 module I = struct
   type 'a t = {
 %{input_fields}
-  }[@@deriving hardcaml]
+  }[@@deriving hardcaml ~rtlmangle:false]
 end
 
 module O = struct
   type 'a t = {
 %{output_fields}
-  }[@@deriving hardcaml]
+  }[@@deriving hardcaml ~rtlmangle:false]
 end
 
 module From_verilog(P : P)(X : sig
