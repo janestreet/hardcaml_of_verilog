@@ -11,16 +11,16 @@ let port_name signal =
 ;;
 
 let signal_op_to_string op =
-  match (op : Signal.Type.signal_op) with
-  | Signal_add -> "$add"
-  | Signal_sub -> "$sub"
-  | Signal_mulu -> "$mulu"
-  | Signal_muls -> "$muls"
-  | Signal_and -> "$and"
-  | Signal_or -> "$or"
-  | Signal_xor -> "$xor"
-  | Signal_eq -> "$eq"
-  | Signal_lt -> "$lt"
+  match (op : Signal.Type.Op.t) with
+  | Add -> "$add"
+  | Sub -> "$sub"
+  | Mulu -> "$mulu"
+  | Muls -> "$muls"
+  | And -> "$and"
+  | Or -> "$or"
+  | Xor -> "$xor"
+  | Eq -> "$eq"
+  | Lt -> "$lt"
 ;;
 
 let create_module ~debug circuit =
@@ -40,29 +40,25 @@ let create_module ~debug circuit =
   let select_map = ref (Map.empty (module Signal.Type.Uid)) in
   Signal_graph.iter (Circuit.signal_graph circuit) ~f:(fun signal ->
     match signal with
-    | Inst { signal_id; _ } ->
-      select_map := Map.set !select_map ~key:signal_id.s_id ~data:[]
+    | Inst { info; _ } -> select_map := Map.set !select_map ~key:info.uid ~data:[]
     | _ -> ());
   Signal_graph.iter (Circuit.signal_graph circuit) ~f:(fun signal ->
     match signal with
-    | Select { arg; signal_id; high; low } ->
+    | Select { arg; info; high; low } ->
       (* Only add it if it is driven by an Inst output. *)
       (match Map.find !select_map (Signal.uid arg) with
        | Some v ->
          select_map
-         := Map.set
-              !select_map
-              ~key:(Signal.uid arg)
-              ~data:((signal_id.s_id, high, low) :: v)
+         := Map.set !select_map ~key:(Signal.uid arg) ~data:((info.uid, high, low) :: v)
        | None -> ())
     | _ -> ());
-  (* We create a map of signal_ids that when seen we want to replace the signal_id, this
+  (* We create a map of [Info.t]s that when seen we want to replace the [Info], this
      is used when dealing with wires. *)
   let driver_map = ref (Map.empty (module Signal.Type.Uid)) in
   Signal_graph.iter (Circuit.signal_graph circuit) ~f:(fun signal ->
     match signal with
-    | Wire { signal_id; driver = Some driver } ->
-      (match Map.add !driver_map ~key:signal_id.s_id ~data:(Signal.uid driver) with
+    | Wire { info; driver = Some driver } ->
+      (match Map.add !driver_map ~key:info.uid ~data:(Signal.uid driver) with
        | `Ok new_map -> driver_map := new_map
        | _ -> ())
     | _ -> ());
@@ -73,10 +69,10 @@ let create_module ~debug circuit =
     print_s
       [%message
         (!select_map : (Signal.Type.Uid.t * int * int) list Map.M(Signal.Type.Uid).t)]);
-  let rec get_driver s_id =
-    match Map.find !driver_map s_id with
+  let rec get_driver uid =
+    match Map.find !driver_map uid with
     | Some v -> get_driver v
-    | None -> s_id
+    | None -> uid
   in
   let bit_name_of_uid uid = Bit.Index (uid |> get_driver |> Signal.Type.Uid.to_int) in
   let bit_name_of_signal signal =
@@ -110,9 +106,9 @@ let create_module ~debug circuit =
         in
         let open Direction in
         match signal with
-        | Reg { d; signal_id; register } ->
+        | Reg { d; info; register } ->
           Some
-            ( "$procdff$" ^ Signal.Type.Uid.to_string signal_id.s_id
+            ( "$procdff$" ^ Signal.Type.Uid.to_string info.uid
             , { default_cell with
                 module_name = "$our_dff"
               ; connections =
@@ -127,7 +123,7 @@ let create_module ~debug circuit =
                       ] )
                   ; "CLK", [ bit_name_of_signal register.clock.clock ]
                   ; "CE", [ bit_name_of_signal_opt register.enable ]
-                  ; "Q", [ bit_name_of_uid signal_id.s_id ]
+                  ; "Q", [ bit_name_of_uid info.uid ]
                   ]
                   |> connections
               ; port_directions =
@@ -140,21 +136,21 @@ let create_module ~debug circuit =
                   ]
                   |> port_dirns
               } )
-        | Cat { signal_id; args } ->
+        | Cat { info; args } ->
           Some
-            ( "$mygate" ^ Signal.Type.Uid.to_string signal_id.s_id
+            ( "$mygate" ^ Signal.Type.Uid.to_string info.uid
             , { default_cell with
                 module_name = "$cat"
               ; connections =
                   [ "A", List.map args ~f:bit_name_of_signal
-                  ; "Y", [ bit_name_of_uid signal_id.s_id ]
+                  ; "Y", [ bit_name_of_uid info.uid ]
                   ]
                   |> connections
               ; port_directions = [ "A", Input; "Y", Output ] |> port_dirns
               } )
         | Empty -> None
-        | Const { signal_id; constant } ->
-          if Set.exists !ignore_set ~f:(Signal.Type.Uid.equal signal_id.s_id)
+        | Const { info; constant } ->
+          if Set.exists !ignore_set ~f:(Signal.Type.Uid.equal info.uid)
           then None
           else (
             let name =
@@ -163,36 +159,34 @@ let create_module ~debug circuit =
                  | 1 -> if Bits.to_bool constant then "vdd" else "gnd"
                  | _ -> "const " ^ Int.Hex.to_string (Bits.to_int_trunc constant))
               ^ "_"
-              ^ Signal.Type.Uid.to_string signal_id.s_id
+              ^ Signal.Type.Uid.to_string info.uid
             in
             Some
               ( name
               , { default_cell with
                   module_name = name
-                ; connections = [ "Y", [ bit_name_of_uid signal_id.s_id ] ] |> connections
+                ; connections = [ "Y", [ bit_name_of_uid info.uid ] ] |> connections
                 ; port_directions = [ "Y", Output ] |> port_dirns
                 } ))
-        | Not { arg; signal_id } ->
+        | Not { arg; info } ->
           Some
-            ( "$not" ^ Signal.Type.Uid.to_string signal_id.s_id
+            ( "$not" ^ Signal.Type.Uid.to_string info.uid
             , { default_cell with
                 module_name = "$inv"
               ; connections =
-                  [ "A", [ bit_name_of_signal arg ]
-                  ; "Y", [ bit_name_of_uid signal_id.s_id ]
-                  ]
+                  [ "A", [ bit_name_of_signal arg ]; "Y", [ bit_name_of_uid info.uid ] ]
                   |> connections
               ; port_directions = [ "A", Input; "Y", Output ] |> port_dirns
               } )
         | Wire _ -> None
-        | Select { arg; signal_id; high; low } ->
+        | Select { arg; info; high; low } ->
           (* Don't draw the select if it is driven by an Inst. *)
           (match Map.find !select_map (Signal.uid arg) with
            | None ->
              Some
                (let select_name =
                   "$select"
-                  ^ Signal.Type.Uid.to_string signal_id.s_id
+                  ^ Signal.Type.Uid.to_string info.uid
                   ^ "["
                   ^ Int.to_string high
                   ^ ":"
@@ -204,15 +198,15 @@ let create_module ~debug circuit =
                     module_name = select_name
                   ; connections =
                       [ "A", [ bit_name_of_signal arg ]
-                      ; "Y", [ bit_name_of_uid signal_id.s_id ]
+                      ; "Y", [ bit_name_of_uid info.uid ]
                       ]
                       |> connections
                   ; port_directions = [ "A", Input; "Y", Output ] |> port_dirns
                   } ))
            | _ -> None)
-        | Multiport_mem { signal_id; write_ports; _ } ->
+        | Multiport_mem { info; write_ports; _ } ->
           Some
-            ( "$memory" ^ Signal.Type.Uid.to_string signal_id.s_id
+            ( "$memory" ^ Signal.Type.Uid.to_string info.uid
             , { default_cell with
                 module_name = "$multiportmem"
               ; connections =
@@ -226,7 +220,7 @@ let create_module ~debug circuit =
                         ; "WR_CLK" ^ Int.to_string i, [ bit_name_of_signal a.write_clock ]
                         ])
                       |> to_list)
-                  @ [ "A", [ bit_name_of_uid signal_id.s_id ] ]
+                  @ [ "A", [ bit_name_of_uid info.uid ] ]
                   |> connections
               ; port_directions =
                   List.concat
@@ -241,37 +235,37 @@ let create_module ~debug circuit =
                   @ [ "A", Input ]
                   |> port_dirns
               } )
-        | Mem_read_port { signal_id; _ } ->
+        | Mem_read_port { info; _ } ->
           Some
-            ( "$mem_read_port" ^ Signal.Type.Uid.to_string signal_id.s_id
+            ( "$mem_read_port" ^ Signal.Type.Uid.to_string info.uid
             , { default_cell with
                 module_name = "$memreadport"
-              ; connections = [ "A", [ bit_name_of_uid signal_id.s_id ] ] |> connections
+              ; connections = [ "A", [ bit_name_of_uid info.uid ] ] |> connections
               ; port_directions = [ "A", Input ] |> port_dirns
               } )
-        | Op2 { signal_id; op; arg_a; arg_b } ->
+        | Op2 { info; op; arg_a; arg_b } ->
           Some
-            ( "$gate" ^ Signal.Type.Uid.to_string signal_id.s_id
+            ( "$gate" ^ Signal.Type.Uid.to_string info.uid
             , { default_cell with
                 module_name = signal_op_to_string op
               ; connections =
                   [ "A", [ bit_name_of_signal arg_a ]
                   ; "B", [ bit_name_of_signal arg_b ]
-                  ; "Y", [ bit_name_of_uid signal_id.s_id ]
+                  ; "Y", [ bit_name_of_uid info.uid ]
                   ]
                   |> connections
               ; port_directions = [ "A", Input; "B", Input; "Y", Output ] |> port_dirns
               } )
-        | Mux { signal_id; select; cases } ->
+        | Mux { info; select; cases } ->
           Some
-            ( "$mux" ^ Signal.Type.Uid.to_string signal_id.s_id
+            ( "$mux" ^ Signal.Type.Uid.to_string info.uid
             , { default_cell with
                 module_name = "$our_mux"
               ; connections =
                   List.mapi cases ~f:(fun i a ->
                     "A" ^ Int.to_string i, [ bit_name_of_signal a ])
                   @ [ "S", [ bit_name_of_signal select ] ]
-                  @ [ "Y", [ bit_name_of_uid signal_id.s_id ] ]
+                  @ [ "Y", [ bit_name_of_uid info.uid ] ]
                   |> connections
               ; port_directions =
                   List.mapi cases ~f:(fun i _ -> "A" ^ Int.to_string i, Input)
@@ -279,9 +273,9 @@ let create_module ~debug circuit =
                   @ [ "Y", Output ]
                   |> port_dirns
               } )
-        | Cases { signal_id; select; cases; default } ->
+        | Cases { info; select; cases; default } ->
           Some
-            ( "$cases" ^ Signal.Type.Uid.to_string signal_id.s_id
+            ( "$cases" ^ Signal.Type.Uid.to_string info.uid
             , { default_cell with
                 module_name = "$our_cases"
               ; connections =
@@ -292,7 +286,7 @@ let create_module ~debug circuit =
                    |> List.concat)
                   @ [ "S", [ bit_name_of_signal select ]
                     ; "D", [ bit_name_of_signal default ]
-                    ; "Y", [ bit_name_of_uid signal_id.s_id ]
+                    ; "Y", [ bit_name_of_uid info.uid ]
                     ]
                   |> connections
               ; port_directions =
@@ -302,11 +296,11 @@ let create_module ~debug circuit =
                   @ [ "S", Input; "D", Input; "Y", Output ]
                   |> port_dirns
               } )
-        | Inst { signal_id; instantiation; _ } ->
+        | Inst { info; instantiation; _ } ->
           (* Get the list of selects this instance drives. *)
-          let selects = Map.find_exn !select_map signal_id.s_id in
+          let selects = Map.find_exn !select_map info.uid in
           Some
-            ( "$mygate" ^ Signal.Type.Uid.to_string signal_id.s_id
+            ( "$mygate" ^ Signal.Type.Uid.to_string info.uid
             , { default_cell with
                 module_name = "$inst_" ^ instantiation.instance_label
               ; connections =
@@ -319,7 +313,7 @@ let create_module ~debug circuit =
                       ~f:(fun { name = n; output_width = _; output_low_index = o_lo } ->
                         (* Try match each output with a select based on its hi and lo. *)
                         match List.find selects ~f:(fun (_id, _hi, lo) -> o_lo = lo) with
-                        | Some (signal_id, _, _) -> Some (n, [ bit_name_of_uid signal_id ])
+                        | Some (info, _, _) -> Some (n, [ bit_name_of_uid info ])
                         | None -> None)
                   |> connections
               ; port_directions =
