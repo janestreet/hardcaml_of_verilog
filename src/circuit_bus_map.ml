@@ -120,7 +120,7 @@ module Cell_port = struct
       { cell_instance_name : string
       ; port_name : string
       }
-    [@@deriving sexp_of, compare]
+    [@@deriving sexp_of, compare ~localize]
   end
 
   include T

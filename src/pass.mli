@@ -6,6 +6,6 @@ type t =
   | Memory of { nomap : bool }
   | Opt of { mux_undef : bool }
   | Clean
-[@@deriving sexp_of, equal]
+[@@deriving sexp_of, equal ~localize]
 
 val to_string : t -> string

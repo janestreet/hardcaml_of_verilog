@@ -1,7 +1,7 @@
 open Base
 
 module Parameter : sig
-  type t = Hardcaml.Parameter.t [@@deriving sexp, equal]
+  type t = Hardcaml.Parameter.t [@@deriving sexp, equal ~localize]
 
   val create : name:string -> value:Hardcaml.Parameter.Value.t -> t
   val name : t -> string
@@ -20,13 +20,13 @@ module Define_value : sig
     | String of string
     | Int of int
     | No_arg
-  [@@deriving sexp, equal]
+  [@@deriving sexp, equal ~localize]
 
   val to_string : t -> string
 end
 
 module Define : sig
-  type t [@@deriving sexp, equal]
+  type t [@@deriving sexp, equal ~localize]
 
   val create : name:string -> value:Define_value.t -> t
   val name : t -> string

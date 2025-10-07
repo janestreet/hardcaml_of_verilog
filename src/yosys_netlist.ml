@@ -60,7 +60,7 @@ module Direction = struct
   type t =
     | Input
     | Output
-  [@@deriving sexp_of, equal]
+  [@@deriving sexp_of, equal ~localize]
 
   let t_of_jsonaf t =
     match Jsonaf.string t with
@@ -82,7 +82,7 @@ module Bit = struct
     | Gnd
     | X
     | Index of int
-  [@@deriving compare, sexp_of]
+  [@@deriving compare ~localize, sexp_of]
 
   let t_of_jsonaf t =
     match Int_or_string.t_of_jsonaf t with

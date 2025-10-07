@@ -1,7 +1,7 @@
 open Base
 
 module Parameter = struct
-  type t = Hardcaml.Parameter.t [@@deriving equal]
+  type t = Hardcaml.Parameter.t [@@deriving equal ~localize]
 
   type simple_parameter = Hardcaml.Parameter_name.t * Hardcaml.Parameter.Value.t
   [@@deriving sexp]
@@ -27,7 +27,7 @@ module Parameter = struct
 end
 
 module Parameters = struct
-  type t = Parameter.t list [@@deriving sexp, equal]
+  type t = Parameter.t list [@@deriving sexp, equal ~localize]
 
   let rec replace (t : t) (parameter : Parameter.t) =
     match t with
@@ -46,7 +46,7 @@ module Define_value = struct
     | String of string
     | Int of int
     | No_arg
-  [@@deriving sexp, equal]
+  [@@deriving sexp, equal ~localize]
 
   let to_string = function
     | Int i -> Int.to_string i
@@ -60,7 +60,7 @@ module Define = struct
     { name : string
     ; value : Define_value.t
     }
-  [@@deriving equal, fields ~getters]
+  [@@deriving equal ~localize, fields ~getters]
 
   type simple_define = string * Define_value.t [@@deriving sexp]
 
@@ -75,11 +75,11 @@ module Define = struct
 end
 
 module Defines = struct
-  type t = Define.t list [@@deriving sexp, equal]
+  type t = Define.t list [@@deriving sexp, equal ~localize]
 end
 
 module Path = struct
-  type t = string [@@deriving sexp, equal]
+  type t = string [@@deriving sexp, equal ~localize]
 end
 
 module Module = struct

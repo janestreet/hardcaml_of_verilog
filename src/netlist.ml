@@ -3,7 +3,7 @@ module Bit = Yosys_netlist.Bit
 
 module Bus = struct
   module T = struct
-    type t = Bit.t list [@@deriving sexp_of, compare]
+    type t = Bit.t list [@@deriving sexp_of, compare ~localize]
   end
 
   include T
