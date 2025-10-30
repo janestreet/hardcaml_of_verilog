@@ -1,7 +1,7 @@
 (executables
  (modes byte exe)
  (names convert)
- (libraries core core_unix.command_unix hardcaml hardcaml_of_verilog parsexp
+ (libraries core_unix.command_unix core hardcaml hardcaml_of_verilog parsexp
    jane_rope stdio)
  (preprocess
   (pps ppx_jane)))
