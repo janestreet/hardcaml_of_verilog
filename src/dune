@@ -1,6 +1,6 @@
 (library
  (name hardcaml_of_verilog)
  (public_name hardcaml_of_verilog)
- (libraries base hardcaml core_unix.filename_unix jsonaf stdio unix)
+ (libraries base core_unix.filename_unix hardcaml jsonaf stdio unix)
  (preprocess
   (pps ppx_jane ppx_jsonaf_conv ppx_hardcaml)))

@@ -762,7 +762,7 @@ module Dffsr = struct
     let dffsr set clr d =
       let set = if p.P.set_polarity = 1 then set else ~:set in
       let clr = if p.P.clr_polarity = 1 then clr else ~:clr in
-      reg
+      Signal.Expert.reg__with_signal_reset
         (reg_spec ~clock:i.clk ~clock_edge ~reset:(set |: clr) ())
         ~reset_to:(mux2 clr gnd vdd)
         d
@@ -823,7 +823,7 @@ module Adff = struct
     let rv = arst_value in
     O.
       { q =
-          reg
+          Signal.Expert.reg__with_signal_reset
             (reg_spec ~clock:i.clk ~clock_edge ~reset:i.arst ~reset_edge ())
             ~reset_to:rv
             i.d

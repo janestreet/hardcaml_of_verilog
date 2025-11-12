@@ -1,6 +1,6 @@
 (library
  (name hardcaml_of_verilog_test)
- (libraries core core_unix core_unix.filename_unix hardcaml_of_verilog
-   expect_test_helpers_core hardcaml stdio)
+ (libraries core core_unix expect_test_helpers_core core_unix.filename_unix
+   hardcaml hardcaml_of_verilog stdio)
  (preprocess
   (pps ppx_jane ppx_hardcaml)))
