@@ -1149,9 +1149,7 @@ let cells =
     ; Dffe.cells
     ; Dffsr.cells
     ; Adff.cells
-    ; Concat.cells
-      (*(Memwr.cells)
-      (Memrd.cells) *)
+    ; Concat.cells (* (Memwr.cells) (Memrd.cells) *)
     ; Mem.cells
     ]
 ;;
