@@ -293,10 +293,10 @@ module Op2 = struct
         O.{ y = uresize y ~width:p.P.y_width } )
   ;;
 
-  (* let macc = ... *)
-  (* let div = ... *)
-  (* let mod = ... *)
-  (* let pow = ... *)
+  (* let macc = ...
+   * let div = ...
+   * let mod = ...
+   * let pow = ... *)
 
   let fl f _ p i =
     let p = P.map ~f:pint p in
@@ -636,11 +636,11 @@ module Lut = struct
   let _get_output_width _ = O.{ y = 1 }
 end
 
-(* module Alu = struct .. end *)
-(* module Tribuf = struct .. end *)
-(* module Assert = struct .. end *)
-(* module Assume = struct .. end *)
-(* module Equiv = struct .. end *)
+(* module Alu = struct .. end
+ * module Tribuf = struct .. end
+ * module Assert = struct .. end
+ * module Assume = struct .. end
+ * module Equiv = struct .. end *)
 
 let reg_spec ?clock_edge ?reset ?reset_edge ~clock () =
   Reg_spec.create ~clock ?clock_edge ?reset ?reset_edge ()
@@ -762,7 +762,7 @@ module Dffsr = struct
     let dffsr set clr d =
       let set = if p.P.set_polarity = 1 then set else ~:set in
       let clr = if p.P.clr_polarity = 1 then clr else ~:clr in
-      reg
+      Signal.Expert.reg__with_signal_reset
         (reg_spec ~clock:i.clk ~clock_edge ~reset:(set |: clr) ())
         ~reset_to:(mux2 clr gnd vdd)
         d
@@ -823,7 +823,7 @@ module Adff = struct
     let rv = arst_value in
     O.
       { q =
-          reg
+          Signal.Expert.reg__with_signal_reset
             (reg_spec ~clock:i.clk ~clock_edge ~reset:i.arst ~reset_edge ())
             ~reset_to:rv
             i.d
@@ -839,10 +839,10 @@ end
 (* module dlatchsr = struct ... end *)
 (* module fsm = struct ... end *)
 
-(* module memrd = struct ... end *)
-(* module memwr = struct ... end *)
-(* module meminit = struct ... end *)
-(* module mem = struct ... end *)
+(* module memrd = struct ... end
+ * module memwr = struct ... end
+ * module meminit = struct ... end
+ * module mem = struct ... end *)
 
 module (* memwr node (for use with memory -dff) - not currently used *) _ = struct
   module P = struct
@@ -1149,9 +1149,7 @@ let cells =
     ; Dffe.cells
     ; Dffsr.cells
     ; Adff.cells
-    ; Concat.cells
-      (*(Memwr.cells)
-      (Memrd.cells) *)
+    ; Concat.cells (* (Memwr.cells) (Memrd.cells) *)
     ; Mem.cells
     ]
 ;;

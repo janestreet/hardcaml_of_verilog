@@ -129,8 +129,8 @@ end
 
 type t =
   { bit_to_select : Select.t Map.M(Int).t
-      (* Map net indices to a single bit [Select.t] of the corresponding signal (input or cell
-     output). *)
+      (* Map net indices to a single bit [Select.t] of the corresponding signal (input or
+         cell output). *)
   ; cell_port_to_wire : Hardcaml.Signal.t Map.M(Cell_port).t
       (* Cell outputs indexed by port name and cell instantiation name *)
   ; bus_names : Bus_names.t (* Netlist bus names for recoving signal naming. *)

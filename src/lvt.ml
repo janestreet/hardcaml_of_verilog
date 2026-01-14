@@ -1,4 +1,4 @@
-(*
+(*=
    Multiport memories for Hardcaml
    ===============================
 

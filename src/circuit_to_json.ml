@@ -52,8 +52,8 @@ let create_module ~debug circuit =
          := Map.set !select_map ~key:(Signal.uid arg) ~data:((info.uid, high, low) :: v)
        | None -> ())
     | _ -> ());
-  (* We create a map of [Info.t]s that when seen we want to replace the [Info], this
-     is used when dealing with wires. *)
+  (* We create a map of [Info.t]s that when seen we want to replace the [Info], this is
+     used when dealing with wires. *)
   let driver_map = ref (Map.empty (module Signal.Type.Uid)) in
   Signal_graph.iter (Circuit.signal_graph circuit) ~f:(fun signal ->
     match signal with
