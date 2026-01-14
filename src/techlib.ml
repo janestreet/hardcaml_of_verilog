@@ -293,10 +293,10 @@ module Op2 = struct
         O.{ y = uresize y ~width:p.P.y_width } )
   ;;
 
-  (* let macc = ... *)
-  (* let div = ... *)
-  (* let mod = ... *)
-  (* let pow = ... *)
+  (* let macc = ...
+   * let div = ...
+   * let mod = ...
+   * let pow = ... *)
 
   let fl f _ p i =
     let p = P.map ~f:pint p in
@@ -636,11 +636,11 @@ module Lut = struct
   let _get_output_width _ = O.{ y = 1 }
 end
 
-(* module Alu = struct .. end *)
-(* module Tribuf = struct .. end *)
-(* module Assert = struct .. end *)
-(* module Assume = struct .. end *)
-(* module Equiv = struct .. end *)
+(* module Alu = struct .. end
+ * module Tribuf = struct .. end
+ * module Assert = struct .. end
+ * module Assume = struct .. end
+ * module Equiv = struct .. end *)
 
 let reg_spec ?clock_edge ?reset ?reset_edge ~clock () =
   Reg_spec.create ~clock ?clock_edge ?reset ?reset_edge ()
@@ -839,10 +839,10 @@ end
 (* module dlatchsr = struct ... end *)
 (* module fsm = struct ... end *)
 
-(* module memrd = struct ... end *)
-(* module memwr = struct ... end *)
-(* module meminit = struct ... end *)
-(* module mem = struct ... end *)
+(* module memrd = struct ... end
+ * module memwr = struct ... end
+ * module meminit = struct ... end
+ * module mem = struct ... end *)
 
 module (* memwr node (for use with memory -dff) - not currently used *) _ = struct
   module P = struct
