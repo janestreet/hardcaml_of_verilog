@@ -163,19 +163,19 @@ endmodule
         output c;
 
         wire b_0;
-        wire the_foo_b;
+        wire \the_foo.b ;
         wire a_0;
-        wire the_foo_a;
+        wire \the_foo.a ;
         wire _7;
         wire c_0;
-        wire the_foo_c;
+        wire \the_foo.c ;
         assign b_0 = b;
         assign a_0 = a;
         assign _7 = a_0 & b_0;
         assign c_0 = _7;
-        assign the_foo_b = b_0;
-        assign the_foo_a = a_0;
-        assign the_foo_c = c_0;
+        assign \the_foo.b  = b_0;
+        assign \the_foo.a  = a_0;
+        assign \the_foo.c  = c_0;
         assign c = c_0;
 
     endmodule
