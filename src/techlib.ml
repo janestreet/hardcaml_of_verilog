@@ -642,8 +642,8 @@ end
  * module Assume = struct .. end
  * module Equiv = struct .. end *)
 
-let reg_spec ?clock_edge ?reset ?reset_edge ~clock () =
-  Reg_spec.create ~clock ?clock_edge ?reset ?reset_edge ()
+let reg_spec ?clock_edge ?reset ?reset_level ~clock () =
+  Reg_spec.create ~clock ?clock_edge ?reset ?reset_level ()
 ;;
 
 (* module Sr = struct end *)
@@ -819,12 +819,12 @@ module Adff = struct
     in
     assert (width i.d = p.P.width);
     let clock_edge : Edge.t = if p.P.clk_polarity = 1 then Rising else Falling in
-    let reset_edge : Edge.t = if p.P.arst_polarity = 1 then Rising else Falling in
+    let reset_level : Level.t = if p.P.arst_polarity = 1 then High else Low in
     let rv = arst_value in
     O.
       { q =
           Signal.Expert.reg__with_signal_reset
-            (reg_spec ~clock:i.clk ~clock_edge ~reset:i.arst ~reset_edge ())
+            (reg_spec ~clock:i.clk ~clock_edge ~reset:i.arst ~reset_level ())
             ~reset_to:rv
             i.d
       }
