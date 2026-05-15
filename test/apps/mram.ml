@@ -75,7 +75,7 @@ let testbench_mram () =
       | `async_wbr -> `async_wbr)
   in
   let random_re = !random_re in
-  (*let module M = Memory_regs(C) in*)
+  (* let module M = Memory_regs(C) in *)
   let module L = Lvt.Make (C) in
   let aname m n = n ^ string_of_int m in
   let mk_input m (n, b) = input (aname m n) b in

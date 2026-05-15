@@ -96,7 +96,7 @@ let run_yosys ?(verbose = false) args =
   let command =
     String.concat
       ~sep:" "
-      (List.concat [ [ Hardcaml.Tools_config.yosys ]; args; verbose ])
+      (List.concat [ [ Hardcaml_tools_config.yosys ]; args; verbose ])
   in
   match Unix.system command with
   | WEXITED 0 -> Ok ()

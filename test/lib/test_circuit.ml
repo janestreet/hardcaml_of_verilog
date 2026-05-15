@@ -83,11 +83,11 @@ endmodule
 
         wire a_0;
         wire x;
-        wire _5;
+        wire signal_xor;
         wire b_0;
         assign a_0 = a;
-        assign _5 = a_0 ^ a_0;
-        assign b_0 = _5;
+        assign signal_xor = a_0 ^ a_0;
+        assign b_0 = signal_xor;
         assign x = a_0;
         assign b = b_0;
 
@@ -115,23 +115,23 @@ endmodule
         input [1:0] a;
         output b;
 
-        wire [31:0] _8;
+        wire [31:0] signal_const;
         wire [1:0] a_0;
         wire x;
-        wire [30:0] _5;
-        wire [31:0] _7;
-        wire [31:0] _9;
-        wire [31:0] _3;
+        wire [30:0] signal_const_1;
+        wire [31:0] signal_cat;
+        wire [31:0] signal_add;
+        wire [31:0] signal_wire;
         wire b_0;
-        assign _8 = 32'b00000000000000000000000000000001;
+        assign signal_const = 32'b00000000000000000000000000000001;
         assign a_0 = a;
         assign x = a_0[0:0];
-        assign _5 = 31'b0000000000000000000000000000000;
-        assign _7 = { _5,
-                      x };
-        assign _9 = _7 + _8;
-        assign _3 = _9;
-        assign b_0 = _3[0:0];
+        assign signal_const_1 = 31'b0000000000000000000000000000000;
+        assign signal_cat = { signal_const_1,
+                              x };
+        assign signal_add = signal_cat + signal_const;
+        assign signal_wire = signal_add;
+        assign b_0 = signal_wire[0:0];
         assign b = b_0;
 
     endmodule
@@ -166,13 +166,13 @@ endmodule
         wire \the_foo.b ;
         wire a_0;
         wire \the_foo.a ;
-        wire _7;
+        wire signal_and;
         wire c_0;
         wire \the_foo.c ;
         assign b_0 = b;
         assign a_0 = a;
-        assign _7 = a_0 & b_0;
-        assign c_0 = _7;
+        assign signal_and = a_0 & b_0;
+        assign c_0 = signal_and;
         assign \the_foo.b  = b_0;
         assign \the_foo.a  = a_0;
         assign \the_foo.c  = c_0;
@@ -197,8 +197,8 @@ endmodule
 
         wire a_0;
         wire b_0;
-        wire _8;
-        wire _5;
+        wire signal_inst;
+        wire signal_wire;
         wire c_0;
         assign a_0 = a;
         assign b_0 = b;
@@ -206,9 +206,9 @@ endmodule
             the_foo
             ( .b(b_0),
               .a(a_0),
-              .c(_8) );
-        assign _5 = _8;
-        assign c_0 = _5;
+              .c(signal_inst) );
+        assign signal_wire = signal_inst;
+        assign c_0 = signal_wire;
         assign c = c_0;
 
     endmodule
