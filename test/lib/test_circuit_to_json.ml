@@ -23,8 +23,14 @@ let create (i : _ I.t) =
 ;;
 
 let%expect_test "simple adder to json" =
+  let config =
+    { Circuit.Config.default with
+      (* Ensure printed signal UIDs are stable *)
+      normalize_uids = true
+    }
+  in
   let module Circuit = Hardcaml.Circuit.With_interface (I) (O) in
-  let circuit = Circuit.create_exn ~name:"adder" create in
+  let circuit = Circuit.create_exn ~name:"adder" ~config create in
   let json =
     Circuit_to_json.convert ~debug:true circuit |> Expert.Yosys_netlist.to_string_hum
   in

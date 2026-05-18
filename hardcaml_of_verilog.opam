@@ -16,15 +16,16 @@ depends: [
   "core"
   "core_unix"
   "hardcaml"
+  "hardcaml_tools_config"
   "hardcaml_verify"
   "jsonaf"
   "ppx_hardcaml"
   "ppx_jane"
   "ppx_jsonaf_conv"
   "stdio"
-  "dune"            {>= "3.17.0"}
+  "dune"                  {>= "3.17.0"}
 ]
-available: arch != "arm32" & arch != "x86_32"
+available: arch != "x86_32"
 synopsis: "Convert Verilog to a Hardcaml design"
 description: "
 The opensource synthesis tool yosys is used to convert a verilog design to a JSON based
