@@ -10,6 +10,7 @@ module Rebuild_interfaces
     (X : sig
        val verilog_design : Verilog_design.t
        val loaded_design : Verilog_circuit.t
+       val strict_port_existence_checks : bool
      end) : sig
   val verilog_design : Verilog_design.t
 

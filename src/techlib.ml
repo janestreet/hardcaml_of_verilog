@@ -725,6 +725,43 @@ module Dffe = struct
   let _get_output_width p = O.{ q = p.P.width }
 end
 
+module Dlatch = struct
+  module P = struct
+    type 'a t =
+      { width : 'a [@rtlname "WIDTH"]
+      ; en_polarity : 'a [@rtlname "EN_POLARITY"]
+      }
+    [@@deriving hardcaml]
+  end
+
+  module I = struct
+    type 'a t =
+      { en : 'a [@rtlname "EN"]
+      ; d : 'a [@rtlname "D"]
+      }
+    [@@deriving hardcaml]
+  end
+
+  module O = struct
+    type 'a t = { q : 'a [@rtlname "Q"] } [@@deriving hardcaml]
+  end
+
+  module W = Implement_cell (P) (I) (O)
+
+  let dlatch _ p i =
+    let p = P.map ~f:pint p in
+    assert (width i.I.d = p.P.width);
+    let enable = if p.P.en_polarity = 1 then i.en else ~:(i.en) in
+    let spec = reg_spec ~clock:gnd () in
+    O.{ q = mux2 enable i.d (reg spec ~enable i.d) }
+  ;;
+
+  let dlatch = "$dlatch", dlatch
+  let cells = [ dlatch ] |> List.map ~f:W.cell_implementation
+  let _get_input_width p = I.{ en = 1; d = p.P.width }
+  let _get_output_width p = O.{ q = p.P.width }
+end
+
 module Dffsr = struct
   module P = struct
     type 'a t =
@@ -1147,6 +1184,7 @@ let cells =
     ; Lut.cells
     ; Dff.cells
     ; Dffe.cells
+    ; Dlatch.cells
     ; Dffsr.cells
     ; Adff.cells
     ; Concat.cells (* (Memwr.cells) (Memrd.cells) *)
@@ -1166,7 +1204,6 @@ let blackboxes =
   ; "assume"
   ; "equiv"
   ; "sr"
-  ; "dlatch"
   ; "dlatchsr"
   ; "memrd"
   ; "memwr"

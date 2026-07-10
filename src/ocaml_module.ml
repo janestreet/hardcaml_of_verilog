@@ -8,6 +8,7 @@ module Rebuild_interfaces
     (X : sig
        val verilog_design : Verilog_design.t
        val loaded_design : Verilog_circuit.t
+       val strict_port_existence_checks : bool
      end) =
 struct
   let verilog_design = X.verilog_design
@@ -18,12 +19,29 @@ struct
     , Verilog_circuit.create_fn X.loaded_design )
   ;;
 
+  let port_existence_checks intf (t : _ Netlist.Port.t list) =
+    let intf = List.sort intf ~compare:String.compare in
+    let verilog = List.map t ~f:Netlist.Port.name |> List.sort ~compare:String.compare in
+    if not ([%equal: string list] intf verilog)
+    then
+      raise_s
+        [%message
+          "Provided interface does not exactly match the ports compiled from verilog"
+            (intf : string list)
+            (verilog : string list)]
+  ;;
+
   module I = struct
     module T = struct
       include I
 
       let port_names_and_widths =
         map port_names ~f:(fun n -> n, (Verilog_circuit.Port.find_exn t_i n).value)
+      ;;
+
+      let () =
+        if X.strict_port_existence_checks
+        then port_existence_checks (to_list port_names) t_i
       ;;
     end
 
@@ -42,6 +60,11 @@ struct
 
     include O
     include Hardcaml.Interface.Make (T)
+
+    let () =
+      if X.strict_port_existence_checks
+      then port_existence_checks (to_list port_names) t_o
+    ;;
   end
 
   let create i =
@@ -133,6 +156,8 @@ end) = struct
               (Hardcaml_of_verilog.Verilog_design.top verilog_design))
       in
       create () |> Or_error.ok_exn
+
+      let strict_port_existence_checks = false
   end)
 end
 
@@ -151,6 +176,8 @@ module From_json(X : sig val json : string end) = struct
               (Hardcaml_of_verilog.Verilog_design.top verilog_design))
       in
       create () |> Or_error.ok_exn
+
+      let strict_port_existence_checks = false
     end)
 end
 |ocaml_module}]

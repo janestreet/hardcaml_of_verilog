@@ -26,6 +26,9 @@ depends: [
   "dune"                  {>= "3.17.0"}
 ]
 available: arch != "x86_32"
+conflicts: [
+  "oxcaml-compiler" {< "5.2.0minus39"}
+]
 synopsis: "Convert Verilog to a Hardcaml design"
 description: "
 The opensource synthesis tool yosys is used to convert a verilog design to a JSON based
