@@ -57,28 +57,28 @@ let%expect_test "simple adder to json" =
       "modules": {
         "adder": {
           "ports": {
-            "clear": {
-              "direction": "input",
-              "bits": [
-                1
-              ]
-            },
             "clock": {
               "direction": "input",
               "bits": [
                 3
               ]
             },
-            "b": {
+            "clear": {
               "direction": "input",
               "bits": [
-                5
+                1
               ]
             },
             "a": {
               "direction": "input",
               "bits": [
                 7
+              ]
+            },
+            "b": {
+              "direction": "input",
+              "bits": [
+                5
               ]
             },
             "y": {
